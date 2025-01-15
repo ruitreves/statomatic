@@ -1,3 +1,4 @@
+Type: Package
 Package: statomatic
 Title: Sort Data by Distribution and Apply Appropriate Statistical Test in a High Throughput Manner
 Version: 0.0.0.9000
