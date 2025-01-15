@@ -5,7 +5,7 @@ Authors@R:
     person("Rui", "Treves", , "first.last@example.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: The statomatic package is a high-throughput hypothesis testing package designed to determine which statistical tests are appropriate for each
-individual variable in a data set and perform the tests. 
+    individual variable in a data set and perform the tests. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
