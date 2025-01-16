@@ -17,7 +17,9 @@ Imports:
     PMCMRplus,
     stats,
     SummarizedExperiment,
-    GenomeInfoDb
+    BiocGenerics (>= 0.7.5), 
+    Biobase, 
+    BiocParallel
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Suggests: 
     knitr,
