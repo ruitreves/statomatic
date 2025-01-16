@@ -15,9 +15,9 @@ Imports:
     onewaytests,
     pheatmap,
     PMCMRplus,
-    S4Vectors,
     stats,
-    SummarizedExperiment
+    SummarizedExperiment,
+    GenomeInfoDb
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Suggests: 
     knitr,
