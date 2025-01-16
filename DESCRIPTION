@@ -18,6 +18,7 @@ Imports:
     S4Vectors,
     stats,
     SummarizedExperiment
+Additional_repositories: https://bioconductor.org/packages/release/bioc
 Suggests: 
     knitr,
     rmarkdown,
