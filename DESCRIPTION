@@ -16,10 +16,7 @@ Imports:
     pheatmap,
     PMCMRplus,
     stats,
-    SummarizedExperiment,
-    BiocGenerics (>= 0.7.5), 
-    Biobase, 
-    BiocParallel
+    SummarizedExperiment
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Suggests: 
     knitr,
