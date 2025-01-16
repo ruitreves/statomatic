@@ -20,8 +20,7 @@ Imports:
     BiocGenerics (>= 0.7.5), 
     Biobase, 
     BiocParallel,
-    GenomeInfoDb,
-    GenomeInfoDbData
+    GenomeInfoDb
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Suggests: 
     knitr,
