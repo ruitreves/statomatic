@@ -1,6 +1,25 @@
 # statomatic
 This package was developed to provide a straight-forward and high-throughput method to perform statistical analyses on numeric data. 
 
+## Installation Instructions
+Statomatic is currently only available for download from this github site, and some of it's dependencies must be installed manually. The following code can be copied
+and pasted into R. 
+
+```{r install_instructions}
+#install BiocManager
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.20")
+#Use BiocManager to install the dependency "SummarizedExperiment"
+BiocManager::install("SummarizedExperiment")
+#install remotes
+install.packages("remotes")
+#use remotes to install statomatic
+remotes::install_github("ruitreves/statomatic")
+```
+
+If you are prompted to choose whether or not to install newer versions of some packages "from source", say no. This could lead to compilation errors and cause statomatic to not be installed.
+
 ## Introduction
 Certain experimental designs are often suited to the preplanned statistical analysis that will take place after data is collected. It is vital, however, to apply the appropriate statistical techniques in order to ensure the validity of the results. The purpose of this package is to provide a high-throughput way to generate statistical results based on characteristics of the data itself, rather than on assumptions about how certains types of data "usually" are. 
 

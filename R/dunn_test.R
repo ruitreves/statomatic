@@ -23,6 +23,7 @@ run_dunn <- function(my_data, var1) {
         }
         else if (i == nrow(my_data)) {
             cat(paste("\r", "Dunn Test ", "100% done", sep = ""))
+            cat("\n")
         }
     }
 
@@ -39,17 +40,16 @@ run_dunn <- function(my_data, var1) {
             }
         }
     }
-
-    rownames(dunn_res) <- rownames(my_data)
     
-    dunn_res <- dunn_res[, match(col_name_list, dunn$comparisons)]
+    rownames(dunn_res) <- rownames(my_data)
     dunn_res <- as.data.frame(dunn_res)
+    dunn_res <- dunn_res[, match(col_name_list, dunn$comparisons)]
+
     colnames(dunn_res) <- col_name_list
     colnames(dunn_res) <- gsub(" - ", "_vs_", colnames(dunn_res))
     colnames(dunn_res) <- paste0("Pval_", colnames(dunn_res))
     dunn_res$test <- "dunn-test"
     cat("\n")
-
     return(dunn_res)
 }
 
