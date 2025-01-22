@@ -15,8 +15,7 @@ Imports:
     onewaytests,
     pheatmap,
     PMCMRplus,
-    stats,
-    SummarizedExperiment
+    stats
 Additional_repositories: https://bioconductor.org/packages/release/bioc
 Suggests: 
     knitr,
