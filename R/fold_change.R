@@ -31,11 +31,11 @@ fold_change <- function(my_data, var1, FUN = log2, ...) {
                             fld_cng <- 0
                         }
                         else {
-                            fld_cng <- Inf
+                            fld_cng <- 1e99
                         }
                     }
                     else if (mean1 == 0) {
-                        fld_cng <- Inf
+                        fld_cng <- -1e99
                     }
                     else {
                         av <- abs(mean1 / mean2)
