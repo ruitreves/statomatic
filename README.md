@@ -1,5 +1,8 @@
-# statomatic
+# statom@ic (statomatic)
 This package was developed to provide a straight-forward and high-throughput method to perform statistical analyses on numeric data. 
+
+## Citation
+Treves, R.S.; Gripshover, T.C.; Hardesty, J.E. STATom@ic: R Package for Automated Statistical Analysis of Omic Datasets. Stats 2025, 8, 18. https://doi.org/10.3390/stats8010018 
 
 ## Installation Instructions
 Statomatic is currently only available for download from this github site, and some of it's dependencies must be installed manually. The following code can be copied

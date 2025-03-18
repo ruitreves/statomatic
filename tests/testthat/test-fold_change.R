@@ -56,10 +56,10 @@ for (i in 1:nrow(x)) {
       for (k in counter:length(test)) {
         mean2 <- test[k]
         if (mean2 == 0) {
-          r <- Inf
+          r <- 1e99
         }
         else if (mean1 == 0) {
-          r <- -Inf
+          r <- -1e99
         }
         else {
           r <- log2(abs(mean1 / mean2))

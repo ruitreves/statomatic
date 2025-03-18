@@ -1,0 +1,9 @@
+bibentry(
+  bibtype  = "Article",
+  title    = "STATom@ic: R Package for Automated Statistical Analysis of Omic Datasets",
+  author   = "Rui S. Treves, Tyler C. Gripshover, and Josiah E. Hardesty",
+  journal  = "MDPI",
+  year     = 2025,
+  volume   = 8,
+  doi      = "10.3390/stats8010018"
+)
