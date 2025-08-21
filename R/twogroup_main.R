@@ -14,6 +14,8 @@ twogroup_main <- function(x, var1, padj = FALSE, include_test_name = FALSE, writ
     ne <- nenunn[[1]]
     nu <- nenunn[[2]]
     nn <- nenunn[[3]]
+    ne_folds <- nu_folds <- nn_folds <- NULL
+    t_res <- welch_res <- wilcox_res <- NULL
     if (nrow(ne) > 0) {
         t_res <- run_ttest(ne, var1, padj = padj, include_test_name)
         ne_folds <- fold_change(ne, var1)
@@ -41,3 +43,4 @@ twogroup_main <- function(x, var1, padj = FALSE, include_test_name = FALSE, writ
                 "ne" = ne, "nu" = nu, "nn" = nn)
     return(res)
 }
+
