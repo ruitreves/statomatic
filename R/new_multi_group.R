@@ -6,7 +6,7 @@
 #' @param sort_columns logical, place each comparison's pvalue and padj columns side by side
 #' @return a data.frame of p-values
 #' @noRd
-new_run_tukey <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = FALSE) {
+new_run_tukey <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = TRUE) {
     per_gene <- lapply(seq_len(nrow(x)), function(i) {
         model <- stats::aov(unlist(x[i, ]) ~ var1)
         pvalues <- stats::TukeyHSD(model)[[1]][, "p adj"]
@@ -24,7 +24,7 @@ new_run_tukey <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_c
 #' Dunnett's T3 test on each row of a data.frame (rebuild of run_dunnett)
 #' @inheritParams new_run_tukey
 #' @noRd
-new_run_dunnett <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = FALSE) {
+new_run_dunnett <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = TRUE) {
     per_gene <- lapply(seq_len(nrow(x)), function(i) {
         d <- AdunnettT3Test(unlist(x[i, ]), g = as.factor(var1))$p.value
         cells <- which(!is.na(d), arr.ind=TRUE)
@@ -36,5 +36,21 @@ new_run_dunnett <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort
     res <- do.call(rbind, per_gene)
     rownames(res) <- rownames(x)
     res <- make_res(res, padj, sort_columns, include_test_name, test_name = "dunnett-test")
+    return(res)
+}
+
+#' Dunn's test on each row of a data.frame (rebuild of run_dunn)
+#' @inheritParams new_run_tukey
+#' @noRd
+new_run_dunn <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = TRUE) {
+    per_gene <- lapply(seq_len(nrow(x)), function(i) {
+        dunn <- Adunn.test(unlist(x[i, ]), g = var1, method = "bonferroni", table = FALSE, kw = FALSE, altp = TRUE)
+        pvalues <- stats::setNames(dunn$altP.adjusted, sub(" - ", "_vs_", dunn$comparisons))
+        pvalues <- pvalues[order(names(pvalues), method = "radix")]
+        return(pvalues)
+    })
+    res <- do.call(rbind, per_gene)
+    rownames(res) <- rownames(x)
+    res <- make_res(res, padj, sort_columns, include_test_name, test_name = "dunn-test")
     return(res)
 }

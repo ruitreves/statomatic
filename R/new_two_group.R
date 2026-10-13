@@ -18,7 +18,7 @@ new_ttest <- function(x, var1, padj = TRUE, include_test_name = TRUE) {
 #' Welch test on each row of a data.frame (rebuild of run_welch)
 #' @inheritParams new_ttest
 #' @noRd
-new_run_welch <- function(x, var1, padj = TRUE, include_test_name = TRUE) {
+new_run_welch <- function(x, var1, padj = TRUE, include_test_name = FALSE) {
     res <- apply(x, 1, function(x) {
         welch <- onewaytests::welch.test(x ~ var1, data = as.data.frame(x), verbose = FALSE)
         return(welch$p.value)
