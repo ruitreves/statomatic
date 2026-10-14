@@ -49,6 +49,7 @@ In the multigroup workflow, each omnibus result is `cbind`-ed with its post-hoc 
 | `new_ttest`, `new_run_welch`, `new_run_wilcox` | `R/new_two_group.R` | Welch also works for >2 groups |
 | `new_run_tukey`, `new_run_dunnett`, `new_run_dunn` | `R/new_multi_group.R` | `sort_columns` defaults TRUE; Dunn requires >2 groups |
 | `new_run_anova`, `new_run_kw` | `R/new_anovas.R` | ANOVA is **always Type II** via `car::Anova`; `factors` is a vector (one-way) or a data.frame (any number of factors, names become columns) |
+| `new_test_norm` | `R/new_test_norm.R` | returns `ne`/`nu`/`nn` + `tests` (per-gene Shapiro/Levene p, set); `shapiro_threshold`, `levene_threshold`; NAs dropped per gene; constant genes not handled (filter beforehand) |
 
 Tests: `test-new_two_group.R`, `test-new_multi_group.R`, `test-new_anovas.R`, helpers in `helper-new.R` (`with_seed()`, `seeded_dummy_data()`, `quietly()`). Last run: 21 test blocks, 0 failures. Old tests all pass.
 
@@ -64,16 +65,23 @@ Dev folder: `load_data.R` (reads `dev/counts.csv` + `dev/sample_info.csv`, match
 
 ## Next steps
 
-1. **Rebuild `test_norm`** → `R/new_test_norm.R`. Old version: `R/testnorm.R`. Idea: per gene, fit the model, get the Shapiro p-value of the residuals and the Levene p-value; assign `ne`/`nu`/`nn`; build the same list of 3 subsets with `split()`. Also return the per-gene p-values so users can see why a gene was sorted. Consider a `threshold` argument (old one is hard-coded 0.05). Add an old-vs-new test.
+1. ~~Rebuild `test_norm`~~ **Done** → `R/new_test_norm.R`, tests in `test-new_test_norm.R` (see Done table).
 2. Rebuild `fold_change` and `combine_fc_pvals` (`R/fold_change.R`, `R/odds.R`).
 3. Rebuild `twogroup_main` and `multigroup_main`. Decide first:
    - **BH pooled or per subset?** Today padj is computed separately within ne, nu and nn. Pooling all omnibus p-values and correcting once is the more common choice.
    - **Two-way designs:** only ne genes get a two-way ANOVA; nu/nn genes get one-way tests on `var3`. Accept and document, or change?
    - **Shapiro power:** with ~8 samples per group many non-normal genes pass as normal. Document it; maybe expose the threshold.
-4. S4 layer (`class_setup.R`, `methods.R`, `make_sds`, `sds_analyze`, `sds_*`, `get_*`).
+4. ~~Rebuild the S4 layer~~ **Remove the S4 layer at integration** (decided 2026-10-14). Nobody uses it, and it's
+   the only reason for the SummarizedExperiment dependency, which `NAMESPACE` imports but `DESCRIPTION`
+   never declares. Don't build new versions of it. At integration: delete `class_setup.R`, `methods.R`
+   and `sds_analyze.R` (`make_sds`, `sds_*`, `get_*`), and remove `import(SummarizedExperiment)`. Rewrite
+   the README and both vignettes around the `*_main` functions. Add one line showing how to use a
+   SummarizedExperiment anyway: `new_test_norm(assay(se), as.data.frame(colData(se))[, c(...)])`.
 5. Decide whether to keep the modified copies `Adunn.test` / `AdunnettT3Test` or call dunn.test / PMCMRplus directly.
 6. Utilities (`chop`, `cf`, `takeN`, `dummy_data`) as needed.
 7. Integration: swap `@noRd` → `@export`, replace old functions, update names/defaults, run `document()`.
+   Also: drop `pheatmap` from `DESCRIPTION` Imports (listed but never used) and remove the
+   Bioconductor `Additional_repositories` line. This is a breaking change: bump the version and add a NEWS entry.
 
 ## Setting up on another computer
 
