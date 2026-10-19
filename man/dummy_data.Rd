@@ -27,7 +27,7 @@ dummy_data(
 \item{param_max}{Maximum random parameters for normal distribution. Defaults to 20}
 }
 \value{
-A list, element one is the randomly generated data frame, element two is sample_info. Access with double brackets: [\link{1}], [\link{2}].
+A list, element one is the randomly generated data frame, element two is sample_info. Access with double brackets: \verb{[[1]]}, \verb{[[2]]}.
 }
 \description{
 Produces a dummy data set from a normal distribution and sample_info object.

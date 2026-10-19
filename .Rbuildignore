@@ -3,3 +3,8 @@
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
+^dev$
+^LICENSE\.md$
+^.*\.Rproj$
+^\.Rproj\.user$
+^normalized_counts\.csv$

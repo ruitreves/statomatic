@@ -2,19 +2,28 @@
 % Please edit documentation in R/fold_change.R
 \name{fold_change}
 \alias{fold_change}
-\title{Calculates fold changes, defaults to log2, for each row of a data frame according to specified factors}
+\title{Fold changes between every pair of groups for each row of a data.frame}
 \usage{
-fold_change(my_data, var1, FUN = log2, ...)
+fold_change(x, var1, log_input = FALSE)
 }
 \arguments{
-\item{my_data}{a numeric data.frame}
+\item{x}{a numeric data.frame or matrix, genes as rows}
 
-\item{var1}{a list which maps columns of my_data to experimental factors
-FUN a function which can be passed one numeric value and return one numeric value. Default is log2, but could be log, identity, function(x) {return(x * 2)}, etc.}
+\item{var1}{group label for each column of x}
+
+\item{log_input}{logical, TRUE if x is already log-transformed}
 }
 \value{
-a data.frame of fold changes
+a data.frame with one \verb{log2FoldChange_<A>_vs_<B>} column per pair of
+groups, followed by one \verb{<group>_mean} column per group
 }
 \description{
-Calculates fold changes, defaults to log2, for each row of a data frame according to specified factors
+For each gene, computes the mean of each group and the log2 fold change for
+every pair of groups, named \verb{<A>_vs_<B>} (A relative to B).
+log_input = FALSE (data on its original scale): log2(|mean_A / mean_B|).
+If both means are 0 the result is 0; if only mean_B is 0 it is 1e99; if
+only mean_A is 0 it is -1e99.
+log_input = TRUE (data already log-transformed): mean_A - mean_B, in the
+units of the input's log base.
+Missing values are ignored when computing group means.
 }

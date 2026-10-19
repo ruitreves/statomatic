@@ -1,0 +1,13 @@
+Baseline: devtools::test() on branch rebuild (from main adaf095), 2026-10-13
+Note: old tests use dummy_data() with no fixed seed, so results can vary between runs.
+
+══ Failed ══════════════════════════════════════════════════════════════════════════════════════════
+── 1. Error ('test-run_dunn.R:5:1'): (code run outside of `test_that()`) ───────────────────────────
+Error in ``colnames<-`(`*tmp*`, value = "group1 - group2")`: attempt to set 'colnames' on an object with less than two dimensions
+Backtrace:
+    ▆
+ 1. └─statomatic::run_dunn(x, sample_info$groups) at test-run_dunn.R:5:1
+ 2.   └─base::`colnames<-`(`*tmp*`, value = `<chr>`) at statomatic/R/dunn_test.R:48:5
+
+══ DONE ════════════════════════════════════════════════════════════════════════════════════════════
+TOTALS failed: 0  errors: 1  skipped: 0  passed tests: 665 / 666 

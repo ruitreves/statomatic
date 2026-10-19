@@ -1,42 +1,50 @@
-d <- dummy_data()
-x <- d[[1]]
-sample_info <- d[[2]]
+# Tests for test_norm. Old test_norm returns an unnamed list of 3 subsets;
+# the new one returns named ne/nu/nn plus a `tests` table.
 
-sample_info$other <- c(rep("other1", ceiling((nrow(sample_info)) / 2)), rep("other2", floor((nrow(sample_info) / 2))))
+group <- rep(c("A", "B", "C"), each = 8)
+sex <- c(rep(c("F", "M"), c(5, 3)), rep(c("F", "M"), c(4, 4)), rep(c("F", "M"), c(3, 5)))
+x <- with_seed(404, rbind(
+    matrix(stats::rnorm(40 * 24, 10, 2), nrow = 40),                                       # mostly ne
+    matrix(stats::rexp(20 * 24), nrow = 20),                                               # mostly nn
+    matrix(stats::rnorm(20 * 24, 10, rep(c(1, 1, 5), each = 8)), nrow = 20, byrow = TRUE)  # mostly nu
+))
+dimnames(x) <- list(paste0("gene", 1:80), paste0("S", 1:24))
 
-res <- test_norm(x, sample_info$groups, sample_info$other)
-
-pass_shap <- NULL
-for (i in 1:nrow(x)) {
-    rows <- rownames(x)
-    mod <- glm(unlist(x[i, ]) ~ sample_info$groups * sample_info$other)
-    resids <- mod$residuals
-    shap <- shapiro.test(resids)
-    if (shap$p.value >= 0.05) {
-        pass_shap <- rbind(pass_shap, rows[i])
-    }
-}
-pass1 <- x[pass_shap, ]
-
-library(car)
-pass_lev <- NULL
-for (i in 1:nrow(pass1)) {
-    rows <- rownames(pass1)
-    mod <- glm(unlist(pass1[i, ]) ~ sample_info$groups * sample_info$other)
-    resids <- mod$residuals
-    vari <- suppressWarnings(leveneTest(resids ~ sample_info$groups * sample_info$other))
-    if (vari$Pr[1] >= 0.05) {
-        pass_lev <- rbind(pass_lev, rows[i])
-    }
-}
-pass2 <- x[pass_lev, ]
-
-test_that("shaprio works", {
-  expect_true(setequal(pass2, unlist(res[[1]])))
+test_that("one-way test_norm matches the original", {
+    old <- original("test_norm_one_way", quietly(test_norm(x, group)))
+    new <- test_norm(x, group)
+    for (k in 1:3) expect_equal(rownames(new[[k]]), rownames(old[[k]]))
 })
-test_that("levene works", {
-  expect_true(setequal(setdiff(pass1, pass2), unlist(res[[2]])))
+
+test_that("two-way test_norm matches the original", {
+    old <- original("test_norm_two_way", suppressWarnings(quietly(test_norm(x, group, sex))))
+    new <- test_norm(x, data.frame(group = group, sex = sex))
+    for (k in 1:3) expect_equal(rownames(new[[k]]), rownames(old[[k]]))
 })
-test_that("both work", {
-  expect_true(setequal(setdiff(x, union(pass1, pass2)), unlist(res[[3]])))
+
+test_that("test_norm returns named subsets and a tests table", {
+    new <- test_norm(x, group)
+    expect_named(new, c("ne", "nu", "nn", "tests"))
+    expect_named(new$tests, c("shapiro", "levene", "set"))
+    expect_equal(sum(sapply(new[c("ne", "nu", "nn")], nrow)), nrow(x))
+    for (s in c("ne", "nu", "nn")) {
+        expect_equal(rownames(new[[s]]), rownames(new$tests)[new$tests$set == s])
+    }
+})
+
+test_that("each threshold controls its own test", {
+    base <- test_norm(x, group)
+    strict_shapiro <- test_norm(x, group, shapiro_threshold = 0.2)
+    strict_levene <- test_norm(x, group, levene_threshold = 0.2)
+    expect_gte(nrow(strict_shapiro$nn), nrow(base$nn))
+    expect_equal(strict_levene$nn, base$nn)          # Levene does not affect nn
+    expect_gte(nrow(strict_levene$nu), nrow(base$nu))
+})
+
+test_that("a missing value is dropped for that gene only", {
+    x_na <- x
+    x_na["gene2", 3] <- NA
+    with_na <- test_norm(x_na, group)$tests["gene2", ]
+    dropped <- test_norm(x["gene2", -3, drop = FALSE], group[-3])$tests
+    expect_equal(with_na, dropped)
 })

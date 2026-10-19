@@ -1,77 +1,83 @@
-#' The multi-group statomatic procedure, pulling together all applicable functions in the correct order. Use this function to analyze a dataset 
-#' with more than 2 groups
-#' @param x a numeric data.frame
-#' @param var1 a list which maps columns of x to experimental factors. Must be exactly 2 factors
-#' @param var2 same as var1, defaults to NULL
-#' @param var3 same as var2
-#' @param padj boolean, whether or not to include Benjamini Hochberg correction. defaults to FALSE
-#' @param write_files boolean, whether or not to write csv files of the test results instead of returning. Defaults to FALSE
-#' @param file_names a list of three file names to be used when writing files. Specify as a vector using c(). The first will be the name of the t-test results,
-#' the second the welch-test results, and the third the wilcox-test results. Only used if write_files = TRUE
-#' @return a list containing all test results, fold changes, and subsets of x as sorted by test_norm, unless write_files = TRUE, in which case nothing is returned.
+#' The multigroup statomatic workflow
+#'
+#' Sorts genes by residual normality and equality of variance, then runs the
+#' matching omnibus and post-hoc tests on each set:
+#'   ne (normal, equal variance):   Type II ANOVA + Tukey HSD
+#'   nu (normal, unequal variance): Welch test + Dunnett T3
+#'   nn (not normal):               Kruskal-Wallis + Dunn
+#' Post-hoc tests and fold changes compare every pair of groups, where a group
+#' is one combination of the factors (e.g. condition_sex). The ANOVA tests every
+#' main effect and interaction; Welch and Kruskal-Wallis are one-way tests on
+#' the combined groups. Benjamini-Hochberg adjustment (padj) is done within
+#' each set.
+#'
+#' @param x a numeric data.frame or matrix, genes as rows, samples as named columns
+#' @param sample_info a data.frame with one row per sample. Samples are matched
+#'   to the columns of x by name: through `sample_col`, the row names, or the
+#'   column whose values are the sample IDs (found automatically). Rows for
+#'   samples that are not in x are ignored.
+#' @param factors names of the columns of sample_info to use as factors: one
+#'   (with 3+ levels, one-way) to three (three-way), e.g. c("condition", "sex")
+#' @param sample_col optional name of the column of sample_info with the sample
+#'   IDs, needed only if several columns contain them
+#' @param padj logical, add Benjamini-Hochberg adjusted p-values
+#' @param log_input logical, TRUE if x is already log-transformed (fold changes
+#'   are then differences of group means)
+#' @param shapiro_threshold significance level for the Shapiro-Wilk test
+#' @param levene_threshold significance level for the Levene test
+#' @param verbose logical, print a message for each step
+#' @return a list:
+#'   `anova_results`, `welch_results`, `kw_results`: omnibus p-values, then for
+#'     each comparison pvalue, padj and log2FoldChange, then group means and
+#'     the post-hoc test name. A set with no genes gives a 0-row table with the
+#'     same columns.
+#'   `foldchanges`: fold changes and group means for all genes.
+#'   `ne`, `nu`, `nn`: the subsets of x.
+#'   `tests`: per-gene Shapiro and Levene p-values and the assigned set.
 #' @export
-multigroup_main <- function(x, var1, var2 = NULL, var3 = NULL, padj = FALSE, write_files = FALSE, file_names = c("anova_results.csv", "welch_results.csv", "kw_results.csv")) {
-    if (write_files == TRUE && length(file_names) != 3) stop("This function creates three files but has not been provided three names")
-    if (is.null(var3)) {var3 <- var1}
-    nenunn <- test_norm(x, var1, var2)
-    ne <- nenunn[[1]]
-    nu <- nenunn[[2]]
-    nn <- nenunn[[3]]
-    all_fcs <- NULL
-    anova_results <- data.frame()
-    welch_results <- data.frame()
-    kw_results <- data.frame()
-    if (nrow(ne) > 0) {
-        my_anova <- run_anova(ne, var1 = var1, var2 = var2, padj)
-        if (padj == TRUE) {
-            if (is.null(var2)) {
-                colnames(my_anova) <- c(substitute(var1), paste0(deparse(substitute(var1)), "_padj"))
-            }
-            else {
-                colnames(my_anova) <- c(substitute(var1), substitute(var2), "interaction", 
-                                    paste0(deparse(substitute(var1)), "_padj"), paste0(deparse(substitute(var2)), "_padj"), "interaction_padj")
-            }
-        }
-        else {
-            if (is.null(var2)) {
-                colnames(my_anova) <- "Pval"
-            }
-            else {
-                colnames(my_anova) <- c(substitute(var1), substitute(var2), "interaction")
-            }
-            
-        }
-        tukey_res <- run_tukey(ne, var3)
-        fc_ne <- fold_change(ne, var3)
-        tukey_res <- combine_fc_pvals(tukey_res, fc_ne)
-        anova_results <- cbind(my_anova, tukey_res)
-        all_fcs <- rbind(all_fcs, fc_ne)
-    }
-    if (nrow(nu) > 0) {
-        welch_res <- run_welch(nu, var3, padj)
-        dunnett_res <- run_dunnett(nu, var3)
-        fc_nu <- fold_change(nu, var3)
-        dunnett_res <- combine_fc_pvals(dunnett_res, fc_nu)
-        welch_results <- cbind(welch_res, dunnett_res)
-        all_fcs <- rbind(all_fcs, fc_nu)
-    }
-    if (nrow(nn) > 0) {
-        krusk_res <- run_kruskal(nn, var3, padj)
-        dunn_res <- run_dunn(nn, var3)
-        fc_nn <- fold_change(nn, var3)
-        dunn_res <- combine_fc_pvals(dunn_res, fc_nn)
-        kw_results <- cbind(krusk_res, dunn_res)
-        all_fcs <- rbind(all_fcs, fc_nn)
-    }
+multigroup_main <- function(x, sample_info, factors, sample_col = NULL,
+                                padj = TRUE, log_input = FALSE,
+                                shapiro_threshold = 0.05, levene_threshold = 0.05,
+                                verbose = TRUE) {
+    say <- function(...) if (verbose) message(...)
 
-    if (write_files == TRUE) {
-        write.csv(anova_results, file_names[1])
-        write.csv(welch_results, file_names[2])
-        write.csv(kw_results, file_names[3])
-        return(NULL)
+    checked <- check_factors(x, select_factors(x, sample_info, factors, sample_col))
+    factors <- checked$factors
+    group <- checked$group
+    x <- as.data.frame(x)
+    say("Analyzing ", n_rows(nrow(x)), " in ", nlevels(group), " groups: ",
+        paste(levels(group), collapse = ", "))
+
+    say("Sorting rows by normality and equality of variance...")
+    sets <- test_norm(x, factors, shapiro_threshold = shapiro_threshold,
+                          levene_threshold = levene_threshold)
+    say("  ne: ", nrow(sets$ne), "  nu: ", nrow(sets$nu), "  nn: ", nrow(sets$nn))
+
+    say("Calculating fold changes...")
+    fcs <- fold_change(x, group, log_input = log_input)
+
+    run_set <- function(dat, label, omnibus, posthoc) {
+        run <- function(d) cbind(omnibus(d), add_fold_changes(posthoc(d), fcs))
+        if (nrow(dat) == 0) {
+            # no genes: run on one gene to get the columns, then keep 0 rows
+            return(run(x[1, , drop = FALSE])[0, , drop = FALSE])
+        }
+        say("Running ", label, " on ", n_rows(nrow(dat)), "...")
+        run(dat)
     }
-    
-    res <- list("anova_results" = anova_results, "welch_results" = welch_results, "kw_results" = kw_results, "foldchanges" = all_fcs,
-                "ne" = ne, "nu" = nu, "nn" = nn)
+    res <- list(
+        anova_results = run_set(sets$ne, "ANOVA + Tukey",
+                                function(d) run_anova(d, factors, padj = padj),
+                                function(d) run_tukey(d, group, padj = padj)),
+        welch_results = run_set(sets$nu, "Welch + Dunnett T3",
+                                function(d) run_welch(d, group, padj = padj),
+                                function(d) run_dunnett(d, group, padj = padj)),
+        kw_results    = run_set(sets$nn, "Kruskal-Wallis + Dunn",
+                                function(d) run_kruskal(d, group, padj = padj),
+                                function(d) run_dunn(d, group, padj = padj)),
+        foldchanges = fcs,
+        ne = sets$ne, nu = sets$nu, nn = sets$nn,
+        tests = sets$tests)
+    say("Done.")
     return(res)
 }

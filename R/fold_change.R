@@ -1,91 +1,41 @@
-#' Calculates fold changes, defaults to log2, for each row of a data frame according to specified factors
-#' @param my_data a numeric data.frame
-#' @param var1 a list which maps columns of my_data to experimental factors
-#' FUN a function which can be passed one numeric value and return one numeric value. Default is log2, but could be log, identity, function(x) {return(x * 2)}, etc. 
-#' @return a data.frame of fold changes
+#' Fold changes between every pair of groups for each row of a data.frame
+#'
+#' For each gene, computes the mean of each group and the log2 fold change for
+#' every pair of groups, named `<A>_vs_<B>` (A relative to B).
+#'   log_input = FALSE (data on its original scale): log2(|mean_A / mean_B|).
+#'     If both means are 0 the result is 0; if only mean_B is 0 it is 1e99; if
+#'     only mean_A is 0 it is -1e99.
+#'   log_input = TRUE (data already log-transformed): mean_A - mean_B, in the
+#'     units of the input's log base.
+#' Missing values are ignored when computing group means.
+#'
+#' @param x a numeric data.frame or matrix, genes as rows
+#' @param var1 group label for each column of x
+#' @param log_input logical, TRUE if x is already log-transformed
+#' @return a data.frame with one `log2FoldChange_<A>_vs_<B>` column per pair of
+#'   groups, followed by one `<group>_mean` column per group
 #' @export
-fold_change <- function(my_data, var1, FUN = log2, ...) {
-    if (!is.function(FUN)) stop(paste0(FUN, " is not a function"))
-    cat("Calculating fold changes...")
-    big_res <- NULL
-    big_means_res <- NULL
-    grp_list <- unique(var1)
-    grp_list <- grp_list[order(grp_list)]
-    for (i in rownames(my_data)) {
-        x <- my_data[i, ]
-        small_res <- NULL
-        small_means_res <- NULL
-        counter <- 1
+fold_change <- function(x, var1, log_input = FALSE) {
+    groups <- sort(unique(var1), method = "radix")
+    means <- vapply(groups, function(g) rowMeans(x[, var1 == g, drop = FALSE], na.rm = TRUE),
+                    numeric(nrow(x)))
+    means <- matrix(means, nrow = nrow(x), dimnames = list(rownames(x), groups))   # keeps shape for one gene
+    pairs <- utils::combn(groups, 2)
 
-        for (grp in grp_list) {
-            counter <- counter + 1
-            mean1 <- mean(unlist(x)[var1 == grp])
-            small_means_res <- cbind(small_means_res, mean1)
-
-            if (counter <= length(grp_list)) {
-                for (j in counter:length(grp_list)) {
-                    mean2 <- mean(unlist(x)[var1 == grp_list[j]])
-
-                    if (mean2 == 0) {
-                        if (mean1 == 0) {
-                            fld_cng <- 0
-                        }
-                        else {
-                            fld_cng <- 1e99
-                        }
-                    }
-                    else if (mean1 == 0) {
-                        fld_cng <- -1e99
-                    }
-                    else {
-                        av <- abs(mean1 / mean2)
-                        fld_cng <- FUN(av)
-                    }
-
-                    small_res <- cbind(small_res, fld_cng)
-                    
-                }
-            }
-        }
-        big_means_res <- rbind(big_means_res, small_means_res)
-        big_res <- rbind(big_res, small_res)
-    }
-
-    fc_name_list <- c()
-    counter <- 1
-    for (grp in grp_list) {
-        counter <- counter + 1
-        if (counter <= length(grp_list)) {
-            for (j in counter:length(grp_list)) {
-                fc_name <- paste("log2FoldChange_", grp, "_vs_", grp_list[j], sep="")
-                fc_name_list <- append(fc_name_list, fc_name)
-            }
-        }
-    }
-    mean_names <- paste0(grp_list, "_mean")
-    rownames(big_res) <- rownames(my_data)
-    colnames(big_res) <- fc_name_list
-    colnames(big_means_res) <- mean_names
-    result <- cbind(big_res, big_means_res)
-    cat("\n")
-    return(result)
-}
-
-#' This function is a helper function for the statomatic workflow. It is not really designed to be used by itself. Combines columns of p value and fold change data.frames 
-#' @param a a data.frame, these values will be on the left
-#' @param b a data.frame, these values will be on the right
-#' @export
-combine_fc_pvals <- function(a, b) {
-    out <- data.frame()
-    pvals <- a[, -ncol(a), drop = FALSE]
-    test <- a[, ncol(a), drop = FALSE]
-    fcs <- b[, 1:ncol(pvals), drop = FALSE]
-    means <- b[, -c(1:ncol(pvals)), drop = FALSE]
-    for (i in 1:ncol(pvals)) {
-        x <- cbind(pvals[, i, drop = FALSE], fcs[, i, drop = FALSE])
-        out <- rbind(out, t(x))
-    }
-    out <- t(out)
-    out <- cbind(out, means, test)
-    return(out)
+    fc <- apply(pairs, 2, function(p) {
+        m1 <- means[, p[1]]
+        m2 <- means[, p[2]]
+        if (log_input) return(m1 - m2)
+        out <- log2(abs(m1 / m2))
+        out[m1 == 0 & m2 == 0] <- 0
+        out[m1 != 0 & m2 == 0] <- 1e99
+        out[m1 == 0 & m2 != 0] <- -1e99
+        out
+    })
+    fc <- matrix(fc, nrow = nrow(x))   # keeps shape for one gene or one pair
+    colnames(fc) <- paste0("log2FoldChange_", pairs[1, ], "_vs_", pairs[2, ])
+    colnames(means) <- paste0(groups, "_mean")
+    res <- as.data.frame(cbind(fc, means), check.names = FALSE)
+    rownames(res) <- rownames(x)
+    return(res)
 }

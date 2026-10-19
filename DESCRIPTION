@@ -1,25 +1,25 @@
 Type: Package
 Package: statomatic
 Title: Sort Data by Distribution and Apply Appropriate Statistical Test in a High Throughput Manner
-Version: 0.0.0.9000
+Version: 1.0.0
 Authors@R: 
-    person("Rui", "Treves", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+    person("Rui", "Treves", , "rui.treves@louisville.edu", role = c("aut", "cre"))
 Description: The statomatic package is a high-throughput hypothesis testing package designed to determine which statistical tests are appropriate for each individual variable in a data set and perform the tests. 
 License: MIT + file LICENSE
+URL: https://ruitreves.github.io/statomatic/, https://github.com/ruitreves/statomatic
+BugReports: https://github.com/ruitreves/statomatic/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Imports: 
     car,
+    mvtnorm,
     onewaytests,
-    pheatmap,
-    PMCMRplus,
-    stats
-Additional_repositories: https://bioconductor.org/packages/release/bioc
+    stats,
+    utils
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.1.0
