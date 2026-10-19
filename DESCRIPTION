@@ -3,8 +3,7 @@ Package: statomatic
 Title: Sort Data by Distribution and Apply Appropriate Statistical Test in a High Throughput Manner
 Version: 1.0.0
 Authors@R: 
-    person("Rui", "Treves", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+    person("Rui", "Treves", , "rui.treves@louisville.edu", role = c("aut", "cre"))
 Description: The statomatic package is a high-throughput hypothesis testing package designed to determine which statistical tests are appropriate for each individual variable in a data set and perform the tests. 
 License: MIT + file LICENSE
 Encoding: UTF-8
