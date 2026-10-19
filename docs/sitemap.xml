@@ -1,84 +1,28 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>/404.html</loc>
-  </url>
-  <url>
-    <loc>/LICENSE-text.html</loc>
-  </url>
-  <url>
-    <loc>/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>/articles/multi_group_vignette.html</loc>
-  </url>
-  <url>
-    <loc>/articles/my-vignette.html</loc>
-  </url>
-  <url>
-    <loc>/articles/two_group_vignette.html</loc>
-  </url>
-  <url>
-    <loc>/authors.html</loc>
-  </url>
-  <url>
-    <loc>/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/cf.html</loc>
-  </url>
-  <url>
-    <loc>/reference/check_means.html</loc>
-  </url>
-  <url>
-    <loc>/reference/combine_fc_pvals.html</loc>
-  </url>
-  <url>
-    <loc>/reference/fold_change.html</loc>
-  </url>
-  <url>
-    <loc>/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>/reference/p.adjustment.methods.html</loc>
-  </url>
-  <url>
-    <loc>/reference/rui.html</loc>
-  </url>
-  <url>
-    <loc>/reference/run_anova.html</loc>
-  </url>
-  <url>
-    <loc>/reference/run_dunn.html</loc>
-  </url>
-  <url>
-    <loc>/reference/run_dunnett.html</loc>
-  </url>
-  <url>
-    <loc>/reference/run_kruskal.html</loc>
-  </url>
-  <url>
-    <loc>/reference/run_ttest.html</loc>
-  </url>
-  <url>
-    <loc>/reference/run_tukey.html</loc>
-  </url>
-  <url>
-    <loc>/reference/run_welch.html</loc>
-  </url>
-  <url>
-    <loc>/reference/run_wilcox.html</loc>
-  </url>
-  <url>
-    <loc>/reference/test_norm.html</loc>
-  </url>
-  <url>
-    <loc>/reference/two_group_rui.html</loc>
-  </url>
-  <url>
-    <loc>/reference/two_group_test_norm.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://ruitreves.github.io/statomatic/404.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/LICENSE-text.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/LICENSE.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/articles/additional_workflows.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/articles/approach_and_limitations.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/articles/basic_workflow.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/articles/index.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/authors.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/index.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/news/index.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/cf.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/dummy_data.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/fold_change.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/index.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/multigroup_main.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/run_anova.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/run_dunn.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/run_dunnett.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/run_kruskal.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/run_ttest.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/run_tukey.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/run_welch.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/run_wilcox.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/test_norm.html</loc></url>
+<url><loc>https://ruitreves.github.io/statomatic/reference/twogroup_main.html</loc></url>
 </urlset>
+

@@ -1,8 +1,11 @@
 pandoc: 3.2.1
-pkgdown: 2.0.9
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
-  multi_group_vignette: multi_group_vignette.html
-  two_group_vignette: two_group_vignette.html
-last_built: 2024-07-02T18:14Z
-
+  additional_workflows: additional_workflows.html
+  approach_and_limitations: approach_and_limitations.html
+  basic_workflow: basic_workflow.html
+last_built: 2026-10-19T18:52Z
+urls:
+  reference: https://ruitreves.github.io/statomatic/reference
+  article: https://ruitreves.github.io/statomatic/articles
