@@ -1,4 +1,4 @@
-# Tests for new_multigroup_main.
+# Tests for multigroup_main.
 
 # 3 groups x 2 sexes, unequal cell sizes. Genes are a mix of normal, skewed
 # and unequal-variance rows so that ne, nu and nn are all non-empty.
@@ -15,7 +15,7 @@ dimnames(x) <- list(paste0("gene", 1:80), samples)
 si <- data.frame(sample = samples, group = group, sex = sex)
 two_way <- c("group", "sex")
 
-run <- function(...) new_multigroup_main(..., verbose = FALSE)
+run <- function(...) multigroup_main(..., verbose = FALSE)
 result_tables <- c("anova_results", "welch_results", "kw_results")
 
 test_that("one-way results match the original multigroup_main", {
@@ -95,10 +95,10 @@ test_that("an empty set gives a 0-row table with the usual columns", {
 })
 
 test_that("verbose prints progress, verbose = FALSE is silent", {
-    msgs <- capture_messages(new_multigroup_main(x, si, two_way))
+    msgs <- capture_messages(multigroup_main(x, si, two_way))
     expect_true(any(grepl("Sorting genes", msgs)))
     expect_true(any(grepl("ne: 50  nu: 4  nn: 26", msgs)))
-    expect_silent(new_multigroup_main(x, si, two_way, verbose = FALSE))
+    expect_silent(multigroup_main(x, si, two_way, verbose = FALSE))
 })
 
 test_that("samples are found by row names, a sample column or sample_col", {

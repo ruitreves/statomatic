@@ -1,12 +1,12 @@
-#' Tukey's HSD test on each row of a data.frame (rebuild of run_tukey)
+#' Tukey's HSD test on each row of a data.frame
 #' @param x a numeric data.frame or matrix, genes as rows
 #' @param var1 group label for each column of x
 #' @param padj logical, add Benjamini-Hochberg adjusted p-values
 #' @param include_test_name logical, add a `test` column
 #' @param sort_columns logical, place each comparison's pvalue and padj columns side by side
 #' @return a data.frame of p-values
-#' @noRd
-new_run_tukey <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = TRUE) {
+#' @export
+run_tukey <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = TRUE) {
     per_gene <- lapply(seq_len(nrow(x)), function(i) {
         model <- stats::aov(unlist(x[i, ]) ~ var1)
         pvalues <- stats::TukeyHSD(model)[[1]][, "p adj"]
@@ -21,10 +21,10 @@ new_run_tukey <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_c
     return(res)
 }
 
-#' Dunnett's T3 test on each row of a data.frame (rebuild of run_dunnett)
-#' @inheritParams new_run_tukey
-#' @noRd
-new_run_dunnett <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = TRUE) {
+#' Dunnett's T3 test on each row of a data.frame
+#' @inheritParams run_tukey
+#' @export
+run_dunnett <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = TRUE) {
     per_gene <- lapply(seq_len(nrow(x)), function(i) dunnett_t3(unlist(x[i, ]), var1))
     res <- do.call(rbind, per_gene)
     rownames(res) <- rownames(x)
@@ -32,10 +32,10 @@ new_run_dunnett <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort
     return(res)
 }
 
-#' Dunn's test on each row of a data.frame (rebuild of run_dunn)
-#' @inheritParams new_run_tukey
-#' @noRd
-new_run_dunn <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = TRUE) {
+#' Dunn's test on each row of a data.frame
+#' @inheritParams run_tukey
+#' @export
+run_dunn <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = TRUE) {
     per_gene <- lapply(seq_len(nrow(x)), function(i) dunn_bonferroni(unlist(x[i, ]), var1))
     res <- do.call(rbind, per_gene)
     rownames(res) <- rownames(x)

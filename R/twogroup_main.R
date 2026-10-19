@@ -1,46 +1,80 @@
-#' The two group statomatic procedure, pulling together all applicable functions in the correct order. Use this function to analyze a dataset 
-#' with exactly two groups
-#' @param x a numeric data.frame
-#' @param var1 a list which maps columns of x to experimental factors. Must be exactly 2 factors
-#' @param padj boolean, whether or not to include Benjamini Hochberg correction. defaults to FALSE
-#' @param write_files boolean, whether or not to write csv files of the test results instead of returning. Defaults to FALSE
-#' @param file_names a list of three file names to be used when writing files. Specify as a vector using c(). The first will be the name of the t-test results,
-#' the second the welch-test results, and the third the wilcox-test results. Only used if write_files = TRUE
-#' @return a list containing all test results, fold changes, and subsets of x as sorted by test_norm, unless write_files = TRUE, in which case nothing is returned.
+#' The two-group statomatic workflow
+#'
+#' Sorts genes by residual normality and equality of variance, then runs the
+#' matching test on each set:
+#'   ne (normal, equal variance):   Student's t-test
+#'   nu (normal, unequal variance): Welch test
+#'   nn (not normal):               Wilcoxon rank-sum test
+#' Benjamini-Hochberg adjustment (padj) is done within each set.
+#'
+#' @param x a numeric data.frame or matrix, genes as rows, samples as named columns
+#' @param sample_info a data.frame with one row per sample. Samples are matched
+#'   to the columns of x by name: through `sample_col`, the row names, or the
+#'   column whose values are the sample IDs (found automatically). Rows for
+#'   samples that are not in x are ignored.
+#' @param factors the name of the column of sample_info with the two groups,
+#'   e.g. "condition"
+#' @param sample_col optional name of the column of sample_info with the sample
+#'   IDs, needed only if several columns contain them
+#' @param padj logical, add Benjamini-Hochberg adjusted p-values
+#' @param log_input logical, TRUE if x is already log-transformed (fold changes
+#'   are then differences of group means)
+#' @param include_test_name logical, add a `test` column. Defaults to TRUE
+#'   because, unlike the multigroup workflow, there is no post-hoc test name to
+#'   show which test a gene got.
+#' @param shapiro_threshold significance level for the Shapiro-Wilk test
+#' @param levene_threshold significance level for the Levene test
+#' @param verbose logical, print a message for each step
+#' @return a list:
+#'   `ttest_results`, `welch_results`, `wilcox_results`: pvalue, padj,
+#'     log2FoldChange, group means and test. A set with no genes gives a 0-row
+#'     table with the same columns.
+#'   `foldchanges`: fold changes and group means for all genes.
+#'   `ne`, `nu`, `nn`: the subsets of x.
+#'   `tests`: per-gene Shapiro and Levene p-values and the assigned set.
 #' @export
-twogroup_main <- function(x, var1, padj = FALSE, include_test_name = FALSE, write_files = FALSE, file_names = c("ttest_results.csv", "welch_results.csv", "wilcox_results.csv")) {
-    if (write_files == TRUE && length(file_names) != 3) stop("This function creates three files but has not been provided three names")
-    nenunn <- test_norm(x, var1)
-    ne <- nenunn[[1]]
-    nu <- nenunn[[2]]
-    nn <- nenunn[[3]]
-    ne_folds <- nu_folds <- nn_folds <- NULL
-    t_res <- welch_res <- wilcox_res <- NULL
-    if (nrow(ne) > 0) {
-        t_res <- run_ttest(ne, var1, padj = padj, include_test_name)
-        ne_folds <- fold_change(ne, var1)
-        t_res <- as.data.frame(cbind(t_res, ne_folds))
-    }
-    if (nrow(nu) > 0) {
-        welch_res <- run_welch(nu, var1, padj, include_test_name)
-        nu_folds <- fold_change(nu, var1)
-        welch_res <- as.data.frame(cbind(welch_res, nu_folds))
-    }
-    if (nrow(nn) > 0) {
-        wilcox_res <- run_wilcox(nn, var1, padj, include_test_name)
-        nn_folds <- fold_change(nn, var1)
-        wilcox_res <- as.data.frame(cbind(wilcox_res, nn_folds))
-    }
+twogroup_main <- function(x, sample_info, factors, sample_col = NULL,
+                              padj = TRUE, log_input = FALSE, include_test_name = TRUE,
+                              shapiro_threshold = 0.05, levene_threshold = 0.05, verbose = TRUE) {
+    say <- function(...) if (verbose) message(...)
 
-    if (write_files == TRUE) {
-        write.csv(t_res, file_names[1])
-        write.csv(welch_res, file_names[2])
-        write.csv(wilcox_res, file_names[3])
-        return(NULL)
+    checked <- check_factors(x, select_factors(x, sample_info, factors, sample_col), two_group = TRUE)
+    group <- checked$group
+    x <- as.data.frame(x)
+    say("Analyzing ", nrow(x), " genes in 2 groups: ", paste(levels(group), collapse = ", "))
+
+    say("Sorting genes by normality and equality of variance...")
+    sets <- test_norm(x, checked$factors, shapiro_threshold = shapiro_threshold,
+                          levene_threshold = levene_threshold)
+    say("  ne: ", nrow(sets$ne), "  nu: ", nrow(sets$nu), "  nn: ", nrow(sets$nn))
+
+    say("Calculating fold changes...")
+    fcs <- fold_change(x, group, log_input = log_input)
+
+    run_set <- function(dat, label, test) {
+        run <- function(d) {
+            p <- test(d)
+            other <- setdiff(colnames(p), c("pvalue", "padj"))   # e.g. test
+            cbind(p[, intersect(c("pvalue", "padj"), colnames(p)), drop = FALSE],
+                  fcs[rownames(d), , drop = FALSE], p[, other, drop = FALSE])
+        }
+        if (nrow(dat) == 0) {
+            # no genes: run on one gene to get the columns, then keep 0 rows
+            return(run(x[1, , drop = FALSE])[0, , drop = FALSE])
+        }
+        say("Running ", label, " on ", nrow(dat), " genes...")
+        run(dat)
     }
-    all_fcs <- rbind(ne_folds, nu_folds, nn_folds)
-    res <- list("ttest_results" = t_res, "welch_results" = welch_res, "wilcox_results" = wilcox_res, "foldchanges" = all_fcs,
-                "ne" = ne, "nu" = nu, "nn" = nn)
+    res <- list(
+        ttest_results  = run_set(sets$ne, "t-test",
+                                 function(d) run_ttest(d, group, padj = padj, include_test_name = include_test_name)),
+        welch_results  = run_set(sets$nu, "Welch test",
+                                 function(d) run_welch(d, group, padj = padj, include_test_name = include_test_name)),
+        wilcox_results = run_set(sets$nn, "Wilcoxon test",
+                                 function(d) run_wilcox(d, group, padj = padj, include_test_name = include_test_name)),
+        foldchanges = fcs,
+        ne = sets$ne, nu = sets$nu, nn = sets$nn,
+        tests = sets$tests)
+    say("Done.")
     return(res)
 }
-

@@ -1,4 +1,4 @@
-# Helpers for the new_* rebuild tests.
+# Helpers for the statomatic tests.
 
 # Evaluate expr with a fixed seed, then restore the previous RNG state so the
 # existing (unseeded) tests behave exactly as before.

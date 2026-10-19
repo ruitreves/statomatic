@@ -1,4 +1,4 @@
-# new_* multi-group tests must give the same p-values as the original run_* functions.
+# The multi-group tests must give the same p-values as the original run_* functions.
 # Column names differ on purpose: old = Pval_<comparison>, new = pvalue_<comparison>.
 
 d <- seeded_dummy_data(202, group_min = 3, group_max = 6, dim_min = 5, dim_max = 10)
@@ -28,37 +28,37 @@ expect_same_pvals <- function(new, old) {
     expect_equal(new[, colnames(old), drop = FALSE], old)
 }
 
-test_that("new_run_tukey matches run_tukey", {
-    expect_same_pvals(new_run_tukey(d$x, d$groups, padj = FALSE),
+test_that("run_tukey matches the original", {
+    expect_same_pvals(run_tukey(d$x, d$groups, padj = FALSE),
                       original("run_tukey", quietly(run_tukey(d$x, d$groups))))
-    expect_same_pvals(new_run_tukey(d$x, tricky_groups, padj = FALSE),
+    expect_same_pvals(run_tukey(d$x, tricky_groups, padj = FALSE),
                       original("run_tukey_tricky", quietly(run_tukey(d$x, tricky_groups))))
 })
 
-test_that("new_run_dunnett matches run_dunnett", {
+test_that("run_dunnett matches the original", {
     # Dunnett T3 p-values come from Monte Carlo integration (mvtnorm::pmvt),
     # so repeated runs differ slightly. Use the same seed for both.
-    expect_same_pvals(with_seed(1, new_run_dunnett(d$x, d$groups, padj = FALSE)),
+    expect_same_pvals(with_seed(1, run_dunnett(d$x, d$groups, padj = FALSE)),
                       original("run_dunnett", with_seed(1, quietly(run_dunnett(d$x, d$groups)))))
-    expect_same_pvals(with_seed(1, new_run_dunnett(d$x, tricky_groups, padj = FALSE)),
+    expect_same_pvals(with_seed(1, run_dunnett(d$x, tricky_groups, padj = FALSE)),
                       original("run_dunnett_tricky", with_seed(1, quietly(run_dunnett(d$x, tricky_groups)))))
 })
 
-test_that("new_run_dunn matches run_dunn", {
-    expect_same_pvals(new_run_dunn(d$x, d$groups, padj = FALSE),
+test_that("run_dunn matches the original", {
+    expect_same_pvals(run_dunn(d$x, d$groups, padj = FALSE),
                       original("run_dunn", quietly(run_dunn(d$x, d$groups))))
-    expect_same_pvals(new_run_dunn(d$x, tricky_groups, padj = FALSE),
+    expect_same_pvals(run_dunn(d$x, tricky_groups, padj = FALSE),
                       original("run_dunn_tricky", quietly(run_dunn(d$x, tricky_groups))))
 })
 
-test_that("new_run_dunn column order does not depend on locale", {
+test_that("run_dunn column order does not depend on locale", {
     old_locale <- Sys.getlocale("LC_COLLATE")
     on.exit(Sys.setlocale("LC_COLLATE", old_locale))
     Sys.setlocale("LC_COLLATE", "C")
-    a <- colnames(new_run_dunn(d$x, tricky_groups))
+    a <- colnames(run_dunn(d$x, tricky_groups))
     skip_if(suppressWarnings(Sys.setlocale("LC_COLLATE", "en_US.UTF-8")) == "",
             "en_US.UTF-8 locale not available")
-    b <- colnames(new_run_dunn(d$x, tricky_groups))
+    b <- colnames(run_dunn(d$x, tricky_groups))
     expect_identical(a, b)
 })
 
@@ -73,22 +73,22 @@ test_that("post-hoc tests and fold changes name comparisons identically in any l
     on.exit(Sys.setlocale("LC_COLLATE", old_locale))
     for (loc in c("C", "en_US.UTF-8")) {
         if (suppressWarnings(Sys.setlocale("LC_COLLATE", loc)) == "") next
-        fc <- cmp(new_fold_change(d$x, g), "log2FoldChange_")
-        expect_identical(cmp(new_run_tukey(d$x, g, padj = FALSE), "pvalue_"), fc)
-        expect_identical(cmp(new_run_dunnett(d$x, g, padj = FALSE), "pvalue_"), fc)
-        expect_identical(cmp(new_run_dunn(d$x, g, padj = FALSE), "pvalue_"), fc)
+        fc <- cmp(fold_change(d$x, g), "log2FoldChange_")
+        expect_identical(cmp(run_tukey(d$x, g, padj = FALSE), "pvalue_"), fc)
+        expect_identical(cmp(run_dunnett(d$x, g, padj = FALSE), "pvalue_"), fc)
+        expect_identical(cmp(run_dunn(d$x, g, padj = FALSE), "pvalue_"), fc)
     }
 })
 
 test_that("padj columns are BH-adjusted pvalue columns", {
-    res <- new_run_tukey(d$x, d$groups)
+    res <- run_tukey(d$x, d$groups)
     p <- res[, grepl("^pvalue_", colnames(res))]
     q <- res[, grepl("^padj_", colnames(res))]
     expect_equal(unname(as.matrix(q)), unname(sapply(p, stats::p.adjust, method = "BH")))
 })
 
 test_that("sort_columns pairs pvalue and padj per comparison", {
-    res <- new_run_tukey(d$x, d$groups, sort_columns = TRUE)
+    res <- run_tukey(d$x, d$groups, sort_columns = TRUE)
     cols <- setdiff(colnames(res), "test")
     expect_equal(sub("^(pvalue|padj)_", "", cols[c(TRUE, FALSE)]),
                  sub("^(pvalue|padj)_", "", cols[c(FALSE, TRUE)]))
@@ -96,16 +96,16 @@ test_that("sort_columns pairs pvalue and padj per comparison", {
 })
 
 test_that("sort_columns is ignored when padj = FALSE", {
-    a <- new_run_tukey(d$x, d$groups, padj = FALSE, sort_columns = TRUE)
-    b <- new_run_tukey(d$x, d$groups, padj = FALSE, sort_columns = FALSE)
+    a <- run_tukey(d$x, d$groups, padj = FALSE, sort_columns = TRUE)
+    b <- run_tukey(d$x, d$groups, padj = FALSE, sort_columns = FALSE)
     expect_identical(a, b)
 })
 
 test_that("multi-group tests work on a single gene with padj", {
     one <- d$x[1, , drop = FALSE]
-    expect_equal(nrow(new_run_tukey(one, d$groups)), 1)
-    expect_equal(nrow(new_run_dunnett(one, d$groups)), 1)
-    expect_equal(nrow(new_run_dunn(one, d$groups)), 1)
+    expect_equal(nrow(run_tukey(one, d$groups)), 1)
+    expect_equal(nrow(run_dunnett(one, d$groups)), 1)
+    expect_equal(nrow(run_dunn(one, d$groups)), 1)
 })
 
 test_that("dunn_bonferroni matches Adunn.test on random data", {

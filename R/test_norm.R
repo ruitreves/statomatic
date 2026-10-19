@@ -1,4 +1,4 @@
-#' Sort genes by residual normality and equality of variance (rebuild of test_norm)
+#' Sort genes by residual normality and equality of variance
 #'
 #' For each gene, fits `y ~ factor1 * factor2 * ...` and tests the residuals for
 #' normality (Shapiro-Wilk) and the groups for equal variance (Levene, median-
@@ -19,8 +19,8 @@
 #'   order) and `tests`, a data.frame with per-gene `shapiro` and `levene`
 #'   p-values and the assigned `set`. Levene is reported for every gene, but is
 #'   only used to sort genes that pass Shapiro.
-#' @noRd
-new_test_norm <- function(x, factors, shapiro_threshold = 0.05, levene_threshold = 0.05) {
+#' @export
+test_norm <- function(x, factors, shapiro_threshold = 0.05, levene_threshold = 0.05) {
     if (is.null(dim(factors))) factors <- data.frame(var1 = factors)   # a single factor
     factors <- as.data.frame(factors)
     factors[] <- lapply(factors, factor)

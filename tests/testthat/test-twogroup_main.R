@@ -1,4 +1,4 @@
-# Tests for new_twogroup_main.
+# Tests for twogroup_main.
 
 # 2 groups of 12. Genes are a mix of normal, skewed and unequal-variance rows
 # so that ne, nu and nn are all non-empty.
@@ -14,7 +14,7 @@ dimnames(x) <- list(paste0("gene", 1:90), samples)
 si <- data.frame(sample = samples, condition = condition, sex = rep(c("F", "M"), 12),
                  three = rep(c("A", "B", "C"), each = 8))
 
-run <- function(...) new_twogroup_main(..., verbose = FALSE)
+run <- function(...) twogroup_main(..., verbose = FALSE)
 result_tables <- c("ttest_results", "welch_results", "wilcox_results")
 layout <- c("pvalue", "padj", "log2FoldChange_Ctrl_vs_Exp", "Ctrl_mean", "Exp_mean", "test")
 
@@ -77,7 +77,7 @@ test_that("an empty set gives a 0-row table with the usual columns", {
 
 test_that("tied values don't produce warnings", {
     # Before R 4.6.0, wilcox.test(exact = TRUE) can't compute exact p-values with
-    # ties and warns for every gene; new_run_wilcox suppresses that. From R 4.6.0
+    # ties and warns for every gene; run_wilcox suppresses that. From R 4.6.0
     # it computes exact conditional p-values and doesn't warn, so this test only
     # exercises the suppression on older R.
     ties <- round(x)
@@ -85,9 +85,9 @@ test_that("tied values don't produce warnings", {
 })
 
 test_that("verbose prints progress, verbose = FALSE is silent", {
-    msgs <- capture_messages(new_twogroup_main(x, si, "condition"))
+    msgs <- capture_messages(twogroup_main(x, si, "condition"))
     expect_true(any(grepl("Running Wilcoxon test", msgs)))
-    expect_silent(new_twogroup_main(x, si, "condition", verbose = FALSE))
+    expect_silent(twogroup_main(x, si, "condition", verbose = FALSE))
 })
 
 test_that("more than 2 groups, or more than one factor, stop", {

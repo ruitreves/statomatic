@@ -1,6 +1,6 @@
 #' Format per-gene p-values into a results table
 #'
-#' Shared by all new_* test functions. Two-group tests pass a named vector
+#' Shared by all run_* test functions. Two-group tests pass a named vector
 #' (one p-value per gene) and get `pvalue`/`padj` columns; multi-group tests
 #' pass a matrix (one column per comparison) and get
 #' `pvalue_<comparison>`/`padj_<comparison>` columns.
@@ -153,7 +153,7 @@ check_factors <- function(x, factors, two_group = FALSE) {
 #' columns of `pvals` (e.g. test). Genes are matched by row name.
 #'
 #' @param pvals a data.frame of post-hoc results with `pvalue_<A>_vs_<B>` columns
-#' @param fcs a data.frame from new_fold_change, covering at least the genes in pvals
+#' @param fcs a data.frame from fold_change, covering at least the genes in pvals
 #' @return a data.frame
 #' @noRd
 add_fold_changes <- function(pvals, fcs) {

@@ -1,4 +1,4 @@
-#' Type II ANOVA on each row of a data.frame (rebuild of run_anova)
+#' Type II ANOVA on each row of a data.frame
 #'
 #' Fits `y ~ factor1 * factor2 * ...` for each gene and tests every main effect
 #' and interaction with a Type II ANOVA (`car::Anova(type = 2)`), so results do
@@ -13,8 +13,8 @@
 #' @param sort_columns logical, place each term's pvalue and padj columns side by side
 #' @return a data.frame of p-values. One-way: `pvalue`/`padj`. Two-way and up:
 #'   `pvalue_<term>`/`padj_<term>` for each main effect and interaction.
-#' @noRd
-new_run_anova <- function(x, factors, padj = TRUE, include_test_name = FALSE, sort_columns = TRUE) {
+#' @export
+run_anova <- function(x, factors, padj = TRUE, include_test_name = FALSE, sort_columns = TRUE) {
     if (is.null(dim(factors))) factors <- data.frame(var1 = factors)   # a single factor
     factors <- as.data.frame(factors)
     factors[] <- lapply(factors, factor)
@@ -31,14 +31,14 @@ new_run_anova <- function(x, factors, padj = TRUE, include_test_name = FALSE, so
     make_res(res, padj, sort_columns, include_test_name, test_name = "anova-test")
 }
 
-#' Kruskal-Wallis test on each row of a data.frame (rebuild of run_kruskal)
+#' Kruskal-Wallis test on each row of a data.frame
 #' @param x a numeric data.frame or matrix, genes as rows
 #' @param var1 group label for each column of x
 #' @param padj logical, add Benjamini-Hochberg adjusted p-values
 #' @param include_test_name logical, add a `test` column
 #' @return a data.frame of p-values with columns `pvalue` and `padj`
-#' @noRd
-new_run_kw <- function(x, var1, padj = TRUE, include_test_name = FALSE) {
+#' @export
+run_kruskal <- function(x, var1, padj = TRUE, include_test_name = FALSE) {
     res <- apply(x, 1, function(x) {
         kw <- stats::kruskal.test(x ~ var1, as.data.frame(x))
         return(kw$p.value)
