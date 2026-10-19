@@ -155,7 +155,7 @@ check_factors <- function(x, factors, two_group = FALSE) {
 #' @param pvals a data.frame of post-hoc results with `pvalue_<A>_vs_<B>` columns
 #' @param fcs a data.frame from fold_change, covering at least the genes in pvals
 #' @return a data.frame
-#' @noRd
+#' @export
 add_fold_changes <- function(pvals, fcs) {
     cmp <- sub("^pvalue_", "", grep("^pvalue_", colnames(pvals), value = TRUE))
     fc_cols <- paste0("log2FoldChange_", cmp)
