@@ -9,52 +9,6 @@ cf <- function(dat, column_index = 1) {
     return(dat)
 }
 
-#' Take n elements of a list and concatenate them. Will introduce NAs if length(x) %% n != 0
-#' @param x a list
-#' @param n an integer specifying the number of elements to concatenate together
-#' @param sep a string, the separating string between elements once concatenated
-#' @export
-
-takeN <- function(x, n = 1, sep = "") {
-    counter <- 1
-    for (i in 1:(ceiling(length(x) / n))) {
-        for (j in counter:(counter + (n-1))) {
-            cat(x[j])
-            cat(sep)
-        }
-        cat("\n")
-        counter <- counter + n        
-    }
-}
-
-#' Chop multi group result files into single comparisons.
-#' @param x a data frame, usually one produced by running the main multigroup normtest function, containing only groupwise comparisons.
-#' @param p p value cutoff for significance. Defaults to 0.05
-#' @param f log2 fold change cut off. Defaults to 1
-#' @export 
-
-chop <- function(x, p = 0.05, f = 1) {
-    chopped <- c()
-    res <- c()
-    counter <- 1
-    for (i in 1:(ncol(x) / 2)) {
-        pfc <- x[, counter:(counter + 1)]
-        res[[i]] <- pfc
-        counter <- counter + 2
-    }
-    sig_res <- c()
-    for (j in 1:length(res)) {
-        cur <- res[[j]]
-        sigs <- cur[cur[, 1] < p, ]
-        sigs <- sigs[abs(sigs[, 2]) > f, ]
-        sig_res[[j]] <- sigs
-    }
-    #chopped <- c(res, sig_res)
-    chopped[[1]] <- res
-    chopped[[2]] <- sig_res
-    return(chopped)
-}
-
 #' Produces a dummy data set from a normal distribution and sample_info object. 
 #' @param group_min Minimum random number of groups. Defaults to 3
 #' @param group_max Maximum random number of groups. Defaults to 20. Note: group_max * dim max must be <= 1000

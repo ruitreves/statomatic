@@ -47,7 +47,8 @@ run_dunn <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_column
 #'
 #' Gives the same results as Adunn.test(y, g, method = "bonferroni",
 #' table = FALSE, kw = FALSE, altp = TRUE), the modified copy of dunn.test
-#' 1.3.6 used by the original statomatic:
+#' 1.3.6 that statomatic used before 1.0.0 (newer dunn.test versions give
+#' different p-values):
 #'   1. rank all values together (ties get their average rank)
 #'   2. z = (mean rank of A - mean rank of B) / sqrt(sigma2 * (1/n_A + 1/n_B)),
 #'      sigma2 = N(N+1)/12 - sum(t^3 - t) / (12(N-1)), t = sizes of tied groups
@@ -80,8 +81,8 @@ dunn_bonferroni <- function(y, g) {
 #' Dunnett's T3 test for one gene
 #'
 #' Gives the same results as AdunnettT3Test(y, factor(g)), the modified copy
-#' of PMCMRplus::dunnettT3Test used by the original statomatic (with the same
-#' random seed, see below):
+#' of PMCMRplus::dunnettT3Test that statomatic used before 1.0.0 (with the
+#' same random seed, see below):
 #'   1. Welch t-statistic for each pair: (mean_A - mean_B) / sqrt(s2_A/n_A + s2_B/n_B)
 #'   2. Welch-Satterthwaite degrees of freedom, rounded to an integer
 #'   3. p = 1 - P(max |T| < |t|) for m independent t variables (the studentized
