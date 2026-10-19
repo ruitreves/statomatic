@@ -4,7 +4,7 @@
 d <- seeded_dummy_data(101, group_max = 2, dim_min = 5, dim_max = 10)
 
 test_that("new_ttest matches run_ttest", {
-    old <- quietly(run_ttest(d$x, d$groups, padj = TRUE))
+    old <- original("run_ttest", quietly(run_ttest(d$x, d$groups, padj = TRUE)))
     new <- new_ttest(d$x, d$groups)
     expect_equal(new$pvalue, old$Pval)
     expect_equal(new$padj, old$Padj)
@@ -12,7 +12,7 @@ test_that("new_ttest matches run_ttest", {
 })
 
 test_that("new_run_welch matches run_welch", {
-    old <- quietly(run_welch(d$x, d$groups, padj = TRUE))
+    old <- original("run_welch", quietly(run_welch(d$x, d$groups, padj = TRUE)))
     new <- new_run_welch(d$x, d$groups)
     expect_equal(new$pvalue, old$Pval)
     expect_equal(new$padj, old$Padj)
@@ -20,7 +20,7 @@ test_that("new_run_welch matches run_welch", {
 })
 
 test_that("new_run_wilcox matches run_wilcox", {
-    old <- quietly(run_wilcox(d$x, d$groups, padj = TRUE))
+    old <- original("run_wilcox", quietly(run_wilcox(d$x, d$groups, padj = TRUE)))
     new <- suppressWarnings(new_run_wilcox(d$x, d$groups))
     expect_equal(new$pvalue, old$Pval)
     expect_equal(new$padj, old$Padj)

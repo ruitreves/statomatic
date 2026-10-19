@@ -11,13 +11,13 @@ x <- with_seed(404, rbind(
 dimnames(x) <- list(paste0("gene", 1:80), paste0("S", 1:24))
 
 test_that("one-way new_test_norm matches test_norm", {
-    old <- quietly(test_norm(x, group))
+    old <- original("test_norm_one_way", quietly(test_norm(x, group)))
     new <- new_test_norm(x, group)
     for (k in 1:3) expect_equal(rownames(new[[k]]), rownames(old[[k]]))
 })
 
 test_that("two-way new_test_norm matches test_norm", {
-    old <- suppressWarnings(quietly(test_norm(x, group, sex)))
+    old <- original("test_norm_two_way", suppressWarnings(quietly(test_norm(x, group, sex))))
     new <- new_test_norm(x, data.frame(group = group, sex = sex))
     for (k in 1:3) expect_equal(rownames(new[[k]]), rownames(old[[k]]))
 })

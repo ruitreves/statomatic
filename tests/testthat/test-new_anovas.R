@@ -10,7 +10,7 @@ x <- with_seed(303, matrix(stats::rnorm(20 * 24, mean = 10, sd = 2), nrow = 20,
                            dimnames = list(paste0("gene", 1:20), paste0("S", 1:24))))
 
 test_that("new_run_kw matches run_kruskal", {
-    old <- quietly(run_kruskal(x, group, padj = TRUE))
+    old <- original("run_kruskal", quietly(run_kruskal(x, group, padj = TRUE)))
     new <- new_run_kw(x, group)
     expect_equal(new$pvalue, unname(old[, "Pval"]))
     expect_equal(new$padj, old$Padj)
@@ -18,7 +18,7 @@ test_that("new_run_kw matches run_kruskal", {
 })
 
 test_that("new_run_welch matches run_welch with more than 2 groups", {
-    old <- quietly(run_welch(x, group, padj = TRUE))
+    old <- original("run_welch_3_groups", quietly(run_welch(x, group, padj = TRUE)))
     new <- new_run_welch(x, group)
     expect_equal(new$pvalue, old$Pval)
     expect_equal(new$padj, old$Padj)
@@ -26,7 +26,7 @@ test_that("new_run_welch matches run_welch with more than 2 groups", {
 
 test_that("one-way new_run_anova matches run_anova", {
     # Type I and Type II are identical with a single factor.
-    old <- quietly(run_anova(x, group, padj = TRUE))
+    old <- original("run_anova_one_way", quietly(run_anova(x, group, padj = TRUE)))
     new <- new_run_anova(x, group)
     expect_equal(new$pvalue, old[, 1])
     expect_equal(new$padj, old[, 2])

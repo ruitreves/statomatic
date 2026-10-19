@@ -7,7 +7,7 @@ x <- with_seed(505, matrix(stats::rpois(10 * 18, lambda = rep(c(20, 40, 80), eac
                            dimnames = list(paste0("gene", 1:10), paste0("S", 1:18))))
 
 test_that("new_fold_change matches fold_change", {
-    old <- quietly(fold_change(x, group))
+    old <- original("fold_change", quietly(fold_change(x, group)))
     new <- new_fold_change(x, group)
     expect_s3_class(new, "data.frame")
     expect_identical(colnames(new), colnames(old))
@@ -18,7 +18,7 @@ test_that("zero means are handled like fold_change", {
     x0 <- x
     x0["gene1", group == "B"] <- 0                    # mean_B = 0
     x0["gene2", group %in% c("A", "B")] <- 0          # both A and B = 0, C not
-    old <- quietly(fold_change(x0, group))
+    old <- original("fold_change_zero_means", quietly(fold_change(x0, group)))
     new <- new_fold_change(x0, group)
     expect_equal(as.matrix(new), old)
     expect_equal(new["gene1", "log2FoldChange_A_vs_B"], 1e99)

@@ -19,7 +19,7 @@ result_tables <- c("ttest_results", "welch_results", "wilcox_results")
 layout <- c("pvalue", "padj", "log2FoldChange_Ctrl_vs_Exp", "Ctrl_mean", "Exp_mean", "test")
 
 test_that("results match the original twogroup_main", {
-    old <- quietly(twogroup_main(x, condition, padj = TRUE))
+    old <- original("twogroup_main", quietly(twogroup_main(x, condition, padj = TRUE)))
     new <- run(x, si, "condition")
     for (s in c("ne", "nu", "nn")) {
         expect_gt(nrow(new[[s]]), 0)

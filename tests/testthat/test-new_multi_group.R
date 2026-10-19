@@ -30,25 +30,25 @@ expect_same_pvals <- function(new, old) {
 
 test_that("new_run_tukey matches run_tukey", {
     expect_same_pvals(new_run_tukey(d$x, d$groups, padj = FALSE),
-                      quietly(run_tukey(d$x, d$groups)))
+                      original("run_tukey", quietly(run_tukey(d$x, d$groups))))
     expect_same_pvals(new_run_tukey(d$x, tricky_groups, padj = FALSE),
-                      quietly(run_tukey(d$x, tricky_groups)))
+                      original("run_tukey_tricky", quietly(run_tukey(d$x, tricky_groups))))
 })
 
 test_that("new_run_dunnett matches run_dunnett", {
     # Dunnett T3 p-values come from Monte Carlo integration (mvtnorm::pmvt),
     # so repeated runs differ slightly. Use the same seed for both.
     expect_same_pvals(with_seed(1, new_run_dunnett(d$x, d$groups, padj = FALSE)),
-                      with_seed(1, quietly(run_dunnett(d$x, d$groups))))
+                      original("run_dunnett", with_seed(1, quietly(run_dunnett(d$x, d$groups)))))
     expect_same_pvals(with_seed(1, new_run_dunnett(d$x, tricky_groups, padj = FALSE)),
-                      with_seed(1, quietly(run_dunnett(d$x, tricky_groups))))
+                      original("run_dunnett_tricky", with_seed(1, quietly(run_dunnett(d$x, tricky_groups)))))
 })
 
 test_that("new_run_dunn matches run_dunn", {
     expect_same_pvals(new_run_dunn(d$x, d$groups, padj = FALSE),
-                      quietly(run_dunn(d$x, d$groups)))
+                      original("run_dunn", quietly(run_dunn(d$x, d$groups))))
     expect_same_pvals(new_run_dunn(d$x, tricky_groups, padj = FALSE),
-                      quietly(run_dunn(d$x, tricky_groups)))
+                      original("run_dunn_tricky", quietly(run_dunn(d$x, tricky_groups))))
 })
 
 test_that("new_run_dunn column order does not depend on locale", {
@@ -122,7 +122,8 @@ test_that("dunn_bonferroni matches Adunn.test on random data", {
                 round(stats::rnorm(N, 10, 2)),                      # many ties
                 stats::rpois(N, 3),                                 # counts, heavy ties
                 stats::rexp(N) * rep(seq_len(k), sizes))            # skewed, unequal spread
-            old <- Adunn.test(y, g, method = "bonferroni", table = FALSE, kw = FALSE, altp = TRUE)
+            old <- original(paste0("Adunn.test_", i),
+                            Adunn.test(y, g, method = "bonferroni", table = FALSE, kw = FALSE, altp = TRUE))
             old_p <- stats::setNames(old$altP.adjusted, sub(" - ", "_vs_", old$comparisons, fixed = TRUE))
             new_p <- dunn_bonferroni(y, g)
             expect_setequal(names(new_p), names(old_p))
@@ -158,7 +159,8 @@ test_that("dunnett_t3 matches AdunnettT3Test on random data", {
                 { v <- stats::rnorm(N, 5); v[g %in% c("g1", "g2")] <- 3; v })  # two identical constant groups
             list(y = y, g = g)
         })
-        old <- with_seed(s, AdunnettT3Test(data$y, factor(data$g))$p.value)
+        old <- original(paste0("AdunnettT3Test_", s),
+                        with_seed(s, AdunnettT3Test(data$y, factor(data$g))$p.value))
         cells <- which(!is.na(old), arr.ind = TRUE)
         old_p <- stats::setNames(old[cells], paste0(colnames(old)[cells[, "col"]], "_vs_",
                                                     rownames(old)[cells[, "row"]]))

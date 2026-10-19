@@ -20,7 +20,7 @@ result_tables <- c("anova_results", "welch_results", "kw_results")
 
 test_that("one-way results match the original multigroup_main", {
     # Dunnett T3 uses Monte Carlo integration, so both runs use the same seed.
-    old <- with_seed(1, quietly(multigroup_main(x, group, padj = FALSE)))
+    old <- original("multigroup_main_one_way", with_seed(1, quietly(multigroup_main(x, group, padj = FALSE))))
     new <- with_seed(1, run(x, si, "group", padj = FALSE))
     for (s in c("ne", "nu", "nn")) expect_identical(rownames(new[[s]]), rownames(old[[s]]))
     for (k in result_tables) {
