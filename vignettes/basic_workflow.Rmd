@@ -26,7 +26,7 @@ library(statomatic)
 
 ## How statomatic chooses a test
 
-statomatic tests each row of the data (each gene, taxon, metabolite, ...) separately. For every row it first checks whether the residuals of a linear model are normally distributed (Shapiro-Wilk test) and whether the groups have equal variances (Levene test). This sorts the rows into three sets:
+Statomatic tests each row of the data (each gene, taxon, metabolite, ...) separately. For every row it first checks whether the residuals of a linear model are normally distributed (Shapiro-Wilk test) and whether the groups have equal variances (Levene test). This sorts the rows into three sets:
 
 | Set | Meaning | 2 groups | > 2 groups | > 2 groups: pairwise comparisons |
 |---|---|---|---|---|
@@ -47,9 +47,9 @@ norm_counts <- read.csv("normalized_counts.csv")
 head(norm_counts)
 ```
 
-Notice that the row names of norm_counts are numbers, and that the gene ids are actually inside the data.frame. statomatic can only analyze numbers, so the gene ids need to be the row names, and the gene id column needs to be removed.
+Notice that the row names of norm_counts are numbers, and that the gene ids are actually inside the data.frame. Statomatic can only analyze numbers, so the gene ids need to be the row names, and the gene id column needs to be removed.
 
-statomatic has a built-in function for this, `cf()`. It sets a specified column of a data.frame as the new row names, and then removes that column from the data.frame. The column can be chosen with `column_index`, which defaults to 1 (the first column).
+Statomatic has a built-in function for this, `cf()`. It sets a specified column of a data.frame as the new row names, and then removes that column from the data.frame. The column can be chosen with `column_index`, which defaults to 1 (the first column).
 
 Using `cf()` with the default `column_index = 1` is the same as reading the file with `read.csv("normalized_counts.csv", row.names = 1)`. Either way works; `cf()` is handy when the data is already loaded.
 
@@ -69,7 +69,7 @@ sample_info <- data.frame(sample = colnames(norm_counts),
 sample_info
 ```
 
-statomatic matches the rows of `sample_info` to the columns of the data by sample name, so the order of the rows doesn't matter. It finds the column with the sample names automatically (here, `sample`). If your sample names are the row names of `sample_info` instead, that works too.
+Statomatic matches the rows of `sample_info` to the columns of the data by sample name, so the order of the rows doesn't matter. It finds the column with the sample names automatically (here, `sample`). If your sample names are the row names of `sample_info` instead, that works too.
 
 Now we run the analysis with `multigroup_main()`. We give it the data, `sample_info`, and the names of the columns of `sample_info` to use as the experimental factors.
 

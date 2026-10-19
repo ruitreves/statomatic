@@ -6,6 +6,8 @@ Authors@R:
     person("Rui", "Treves", , "rui.treves@louisville.edu", role = c("aut", "cre"))
 Description: The statomatic package is a high-throughput hypothesis testing package designed to determine which statistical tests are appropriate for each individual variable in a data set and perform the tests. 
 License: MIT + file LICENSE
+URL: https://ruitreves.github.io/statomatic/, https://github.com/ruitreves/statomatic
+BugReports: https://github.com/ruitreves/statomatic/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports: 

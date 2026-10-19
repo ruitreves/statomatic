@@ -41,7 +41,7 @@ of the previous version). This release has breaking changes.
   The SummarizedExperiment dependency is removed with it.
 * `combine_fc_pvals()`, `chop()` and `takeN()`.
 * `Adunn.test()`, `AdunnettT3Test()` and `p.adjustment.methods`, modified copies
-  of `dunn.test::dunn.test()` and `PMCMRplus::dunnettT3Test()`. statomatic now
+  of `dunn.test::dunn.test()` and `PMCMRplus::dunnettT3Test()`. Statomatic now
   has its own implementations of Dunn's test and Dunnett's T3 test, which give
   the same results as the copies (current dunn.test versions give different
   p-values than the 1.3.6 copy). The PMCMRplus dependency is removed.
