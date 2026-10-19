@@ -32,7 +32,9 @@ new_run_welch <- function(x, var1, padj = TRUE, include_test_name = FALSE) {
 #' @noRd
 new_run_wilcox <- function(x, var1, padj = TRUE, include_test_name = TRUE) {
     res <- apply(x, 1, function(x) {
-        test <- stats::wilcox.test(x ~ var1, exact = TRUE)
+        # with ties an exact p-value can't be computed; R falls back to the normal
+        # approximation and warns for each gene, so hide the warning (as run_wilcox did)
+        test <- suppressWarnings(stats::wilcox.test(x ~ var1, exact = TRUE))
         pvalue <- test$p.value
         return(pvalue)
     })

@@ -95,6 +95,14 @@ test_that("numeric columns warn", {
     expect_warning(check_factors(x, num), "Numeric column\\(s\\) treated as categories: sex")
 })
 
+test_that("two_group = TRUE requires exactly one factor with 2 levels", {
+    two <- check_factors(x, f2[, "condition", drop = FALSE], two_group = TRUE)
+    expect_identical(levels(two$group), c("Ctrl", "Exp"))
+    expect_error(check_factors(x, stats::setNames(rep(c("A", "B", "C"), each = 8), samples), two_group = TRUE),
+                 "exactly one factor with 2 levels")
+    expect_error(check_factors(x, f2, two_group = TRUE), "exactly one factor with 2 levels")
+})
+
 test_that("long lists in messages are shortened", {
     f <- data.frame(g = rep(c("A", "B", "C"), each = 8), row.names = paste0("T", 1:24))
     expect_error(check_factors(x, f), "S1, S2, S3, S4, S5 and 19 more")

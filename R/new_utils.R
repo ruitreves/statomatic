@@ -46,10 +46,12 @@ make_res <- function(res, padj, sort_columns, include_test_name, test_name = "")
 #' @param x a numeric data.frame or matrix, genes as rows, samples as named columns
 #' @param factors a named vector (one factor), or a data.frame with one column
 #'   per factor (up to 3) and row names that match colnames(x)
+#' @param two_group logical, TRUE for the two-group workflow: requires exactly
+#'   one factor with 2 levels. FALSE (multigroup) requires 3+ levels for a single factor.
 #' @return a list: `factors`, a data.frame of factors (radix-sorted levels) in
 #'   the column order of x, and `group`, the combined group as a factor
 #' @noRd
-check_factors <- function(x, factors) {
+check_factors <- function(x, factors, two_group = FALSE) {
     show <- function(v, n = 5) {   # list up to n names in messages
         more <- if (length(v) > n) paste0(" and ", length(v) - n, " more") else ""
         paste0(paste(utils::head(v, n), collapse = ", "), more)
@@ -107,7 +109,11 @@ check_factors <- function(x, factors) {
         factor(f, levels = sort(unique(f), method = "radix"))
     })
     n_levels <- vapply(factors, nlevels, integer(1))
-    if (ncol(factors) == 1 && n_levels < 3) {
+    if (two_group && (ncol(factors) != 1 || n_levels != 2)) {
+        stop("The two-group workflow needs exactly one factor with 2 levels. ",
+             "Use multigroup_main for more groups or factors.", call. = FALSE)
+    }
+    if (!two_group && ncol(factors) == 1 && n_levels < 3) {
         stop("A single factor needs at least 3 levels for the multigroup workflow; it has ",
              n_levels, ". Use twogroup_main for 2 groups.", call. = FALSE)
     }
