@@ -139,3 +139,29 @@ check_factors <- function(x, factors) {
     }
     list(factors = factors, group = group)
 }
+
+#' Attach fold changes to post-hoc p-values, matched by comparison name
+#'
+#' For each comparison in `pvals`, orders the columns as pvalue, padj (if
+#' present), log2FoldChange, then appends the group means and any other
+#' columns of `pvals` (e.g. test). Genes are matched by row name.
+#'
+#' @param pvals a data.frame of post-hoc results with `pvalue_<A>_vs_<B>` columns
+#' @param fcs a data.frame from new_fold_change, covering at least the genes in pvals
+#' @return a data.frame
+#' @noRd
+add_fold_changes <- function(pvals, fcs) {
+    cmp <- sub("^pvalue_", "", grep("^pvalue_", colnames(pvals), value = TRUE))
+    fc_cols <- paste0("log2FoldChange_", cmp)
+    missing <- setdiff(fc_cols, colnames(fcs))
+    if (length(missing)) stop("No fold changes for: ", paste(missing, collapse = ", "), call. = FALSE)
+    fcs <- fcs[rownames(pvals), , drop = FALSE]
+    per_cmp <- unlist(lapply(cmp, function(k) {
+        c(paste0("pvalue_", k),
+          if (paste0("padj_", k) %in% colnames(pvals)) paste0("padj_", k),
+          paste0("log2FoldChange_", k))
+    }))
+    means <- grep("_mean$", colnames(fcs), value = TRUE)
+    other <- setdiff(colnames(pvals), grep("^(pvalue|padj)_", colnames(pvals), value = TRUE))
+    cbind(pvals, fcs)[, c(per_cmp, means, other), drop = FALSE]
+}
