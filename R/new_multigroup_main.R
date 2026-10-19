@@ -12,9 +12,14 @@
 #' each set.
 #'
 #' @param x a numeric data.frame or matrix, genes as rows, samples as named columns
-#' @param factors a named vector (one factor with 3+ levels), or a data.frame
-#'   with one column per factor (up to 3) and row names that match colnames(x).
-#'   Samples are matched by name; see check_factors.
+#' @param sample_info a data.frame with one row per sample. Samples are matched
+#'   to the columns of x by name: through `sample_col`, the row names, or the
+#'   column whose values are the sample IDs (found automatically). Rows for
+#'   samples that are not in x are ignored.
+#' @param factors names of the columns of sample_info to use as factors: one
+#'   (with 3+ levels, one-way) to three (three-way), e.g. c("condition", "sex")
+#' @param sample_col optional name of the column of sample_info with the sample
+#'   IDs, needed only if several columns contain them
 #' @param padj logical, add Benjamini-Hochberg adjusted p-values
 #' @param log_input logical, TRUE if x is already log-transformed (fold changes
 #'   are then differences of group means)
@@ -30,12 +35,13 @@
 #'   `ne`, `nu`, `nn`: the subsets of x.
 #'   `tests`: per-gene Shapiro and Levene p-values and the assigned set.
 #' @noRd
-new_multigroup_main <- function(x, factors, padj = TRUE, log_input = FALSE,
+new_multigroup_main <- function(x, sample_info, factors, sample_col = NULL,
+                                padj = TRUE, log_input = FALSE,
                                 shapiro_threshold = 0.05, levene_threshold = 0.05,
                                 verbose = TRUE) {
     say <- function(...) if (verbose) message(...)
 
-    checked <- check_factors(x, factors)
+    checked <- check_factors(x, select_factors(x, sample_info, factors, sample_col))
     factors <- checked$factors
     group <- checked$group
     x <- as.data.frame(x)

@@ -10,7 +10,9 @@ x <- with_seed(808, rbind(
     matrix(stats::rnorm(30 * 24, 10, rep(c(1, 3), each = 12)), nrow = 30, byrow = TRUE)
 ))
 dimnames(x) <- list(paste0("gene", 1:90), samples)
-f <- stats::setNames(condition, samples)
+# sample IDs in a column (default row names), as read from a CSV
+si <- data.frame(sample = samples, condition = condition, sex = rep(c("F", "M"), 12),
+                 three = rep(c("A", "B", "C"), each = 8))
 
 run <- function(...) new_twogroup_main(..., verbose = FALSE)
 result_tables <- c("ttest_results", "welch_results", "wilcox_results")
@@ -18,7 +20,7 @@ layout <- c("pvalue", "padj", "log2FoldChange_Ctrl_vs_Exp", "Ctrl_mean", "Exp_me
 
 test_that("results match the original twogroup_main", {
     old <- quietly(twogroup_main(x, condition, padj = TRUE))
-    new <- run(x, f)
+    new <- run(x, si, "condition")
     for (s in c("ne", "nu", "nn")) {
         expect_gt(nrow(new[[s]]), 0)
         expect_identical(rownames(new[[s]]), rownames(old[[s]]))
@@ -34,7 +36,7 @@ test_that("results match the original twogroup_main", {
 })
 
 test_that("each table has the same layout and names its test", {
-    res <- run(x, f)
+    res <- run(x, si, "condition")
     for (k in result_tables) expect_identical(colnames(res[[k]]), layout)
     expect_identical(unique(res$ttest_results$test), "t-test")
     expect_identical(unique(res$welch_results$test), "welch-test")
@@ -42,14 +44,14 @@ test_that("each table has the same layout and names its test", {
 })
 
 test_that("include_test_name = FALSE and padj = FALSE drop those columns", {
-    res <- run(x, f, include_test_name = FALSE, padj = FALSE)
+    res <- run(x, si, "condition", include_test_name = FALSE, padj = FALSE)
     for (k in result_tables) {
         expect_identical(colnames(res[[k]]), setdiff(layout, c("padj", "test")))
     }
 })
 
 test_that("every gene is in exactly one results table, matching its set", {
-    res <- run(x, f)
+    res <- run(x, si, "condition")
     expect_identical(rownames(res$ttest_results), rownames(res$ne))
     expect_identical(rownames(res$welch_results), rownames(res$nu))
     expect_identical(rownames(res$wilcox_results), rownames(res$nn))
@@ -59,14 +61,14 @@ test_that("every gene is in exactly one results table, matching its set", {
     expect_identical(rownames(res$foldchanges), rownames(x))
 })
 
-test_that("sample order in factors does not matter", {
-    shuffled <- f[with_seed(2, sample(length(f)))]
-    expect_identical(run(x, shuffled), run(x, f))
+test_that("row order of sample_info does not matter", {
+    shuffled <- si[with_seed(2, sample(nrow(si))), ]
+    expect_identical(run(x, shuffled, "condition"), run(x, si, "condition"))
 })
 
 test_that("an empty set gives a 0-row table with the usual columns", {
-    no_nu <- run(x, f, levene_threshold = 0)
-    no_nn <- run(x, f, shapiro_threshold = 0)
+    no_nu <- run(x, si, "condition", levene_threshold = 0)
+    no_nn <- run(x, si, "condition", shapiro_threshold = 0)
     expect_equal(nrow(no_nu$welch_results), 0)
     expect_identical(colnames(no_nu$welch_results), layout)
     expect_equal(nrow(no_nn$wilcox_results), 0)
@@ -79,19 +81,17 @@ test_that("tied values don't produce warnings", {
     # it computes exact conditional p-values and doesn't warn, so this test only
     # exercises the suppression on older R.
     ties <- round(x)
-    expect_no_warning(run(ties, f, shapiro_threshold = 1))   # every gene goes to nn
+    expect_no_warning(run(ties, si, "condition", shapiro_threshold = 1))   # every gene goes to nn
 })
 
 test_that("verbose prints progress, verbose = FALSE is silent", {
-    msgs <- capture_messages(new_twogroup_main(x, f))
+    msgs <- capture_messages(new_twogroup_main(x, si, "condition"))
     expect_true(any(grepl("Running Wilcoxon test", msgs)))
-    expect_silent(new_twogroup_main(x, f, verbose = FALSE))
+    expect_silent(new_twogroup_main(x, si, "condition", verbose = FALSE))
 })
 
 test_that("more than 2 groups, or more than one factor, stop", {
-    three <- stats::setNames(rep(c("A", "B", "C"), each = 8), samples)
-    expect_error(run(x, three), "exactly one factor with 2 levels")
-    two_factors <- data.frame(condition = condition, sex = rep(c("F", "M"), 12), row.names = samples)
-    expect_error(run(x, two_factors), "exactly one factor with 2 levels")
-    expect_error(run(x, unname(f)), "Can't match")
+    expect_error(run(x, si, "three"), "exactly one factor with 2 levels")
+    expect_error(run(x, si, c("condition", "sex")), "exactly one factor with 2 levels")
+    expect_error(run(x, si, "conditon"), "not found in `sample_info`: conditon")
 })

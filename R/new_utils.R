@@ -171,3 +171,77 @@ add_fold_changes <- function(pvals, fcs) {
     other <- setdiff(colnames(pvals), grep("^(pvalue|padj)_", colnames(pvals), value = TRUE))
     cbind(pvals, fcs)[, c(per_cmp, means, other), drop = FALSE]
 }
+
+#' Pick the factor columns from a sample table and label them with sample IDs
+#'
+#' Used by the main functions before check_factors. Finds the sample IDs of
+#' `sample_info` so its rows can be matched to the columns of `x`:
+#'   1. `sample_col`, if given
+#'   2. the row names, if they contain every sample in x
+#'   3. otherwise the one column whose values contain every sample in x
+#' Rows of sample_info for samples that are not in x are dropped.
+#'
+#' @param x a numeric data.frame or matrix, genes as rows, samples as named columns
+#' @param sample_info a data.frame with one row per sample
+#' @param factors names of the columns of sample_info to use as factors
+#' @param sample_col optional name of the column of sample_info with sample IDs
+#' @return a data.frame of the factor columns, with sample IDs as row names,
+#'   one row per sample in x
+#' @noRd
+select_factors <- function(x, sample_info, factors, sample_col = NULL) {
+    if (is.null(colnames(x))) {
+        stop("`x` needs column names (sample IDs) so its samples can be found in `sample_info`.", call. = FALSE)
+    }
+    if (!is.data.frame(sample_info)) {
+        stop("`sample_info` must be a data.frame with one row per sample.", call. = FALSE)
+    }
+    sample_info <- as.data.frame(sample_info)   # tibbles etc.
+    if (!is.character(factors) || length(factors) == 0) {
+        stop("`factors` must be the names of columns in `sample_info`, e.g. c(\"condition\", \"sex\").", call. = FALSE)
+    }
+    if (length(factors) > 3) {
+        stop("`factors` should be 1 to 3 column names of `sample_info`, e.g. \"group\" or c(\"condition\", \"sex\").\n",
+             "  Pass the column names, not the columns themselves (\"group\", not sample_info$group).", call. = FALSE)
+    }
+    not_found <- setdiff(factors, colnames(sample_info))
+    if (length(not_found)) {
+        stop("Column(s) not found in `sample_info`: ", paste(not_found, collapse = ", "),
+             "\n  Available columns: ", paste(colnames(sample_info), collapse = ", "), call. = FALSE)
+    }
+
+    # --- find the sample IDs ---
+    has_all <- function(ids) all(colnames(x) %in% ids)
+    if (!is.null(sample_col)) {
+        if (!sample_col %in% colnames(sample_info)) {
+            stop("`sample_col` \"", sample_col, "\" is not a column of `sample_info`.", call. = FALSE)
+        }
+        ids <- as.character(sample_info[[sample_col]])
+        if (!has_all(ids)) {
+            stop("Samples of x not found in `sample_info$", sample_col, "`: ",
+                 paste(utils::head(setdiff(colnames(x), ids), 5), collapse = ", "), call. = FALSE)
+        }
+    } else if (has_all(rownames(sample_info))) {
+        ids <- rownames(sample_info)
+    } else {
+        candidates <- names(sample_info)[vapply(sample_info, function(col) has_all(as.character(col)), logical(1))]
+        if (length(candidates) > 1) {
+            stop("Several columns of `sample_info` contain the sample names of x: ",
+                 paste(candidates, collapse = ", "), ". Choose one with `sample_col`.", call. = FALSE)
+        }
+        if (length(candidates) == 0) {
+            stop("Can't find the samples of x (its column names) in `sample_info`.\n",
+                 "  Give `sample_info` a column with the sample IDs, or set its row names, or use `sample_col`.",
+                 "\n  Samples of x: ", paste(utils::head(colnames(x), 5), collapse = ", "),
+                 if (ncol(x) > 5) ", ...", call. = FALSE)
+        }
+        ids <- as.character(sample_info[[candidates]])
+    }
+    if (anyDuplicated(ids[ids %in% colnames(x)])) {
+        stop("Sample IDs in `sample_info` must be unique.", call. = FALSE)
+    }
+
+    keep <- ids %in% colnames(x)   # drop samples that are not in x
+    out <- sample_info[keep, factors, drop = FALSE]
+    rownames(out) <- ids[keep]
+    out
+}
