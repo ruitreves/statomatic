@@ -107,3 +107,79 @@ test_that("multi-group tests work on a single gene with padj", {
     expect_equal(nrow(new_run_dunnett(one, d$groups)), 1)
     expect_equal(nrow(new_run_dunn(one, d$groups)), 1)
 })
+
+test_that("dunn_bonferroni matches Adunn.test on random data", {
+    # Adunn.test is the modified copy of dunn.test 1.3.6 used by the original
+    # statomatic. Results must be identical, including with ties.
+    with_seed(42, {
+        for (i in 1:200) {
+            k <- sample(3:6, 1)
+            sizes <- sample(3:12, k, replace = TRUE)
+            g <- rep(paste0("g", seq_len(k)), sizes)
+            N <- sum(sizes)
+            y <- switch(i %% 4 + 1,
+                stats::rnorm(N, rep(seq_len(k) / 2, sizes)),        # continuous
+                round(stats::rnorm(N, 10, 2)),                      # many ties
+                stats::rpois(N, 3),                                 # counts, heavy ties
+                stats::rexp(N) * rep(seq_len(k), sizes))            # skewed, unequal spread
+            old <- Adunn.test(y, g, method = "bonferroni", table = FALSE, kw = FALSE, altp = TRUE)
+            old_p <- stats::setNames(old$altP.adjusted, sub(" - ", "_vs_", old$comparisons, fixed = TRUE))
+            new_p <- dunn_bonferroni(y, g)
+            expect_setequal(names(new_p), names(old_p))
+            expect_equal(new_p, old_p[names(new_p)])
+        }
+    })
+})
+
+test_that("dunn_bonferroni drops missing values and keeps every pair", {
+    y <- with_seed(9, stats::rnorm(18))
+    g <- rep(c("A", "B", "C"), each = 6)
+    y_na <- y
+    y_na[c(2, 9)] <- NA
+    expect_equal(dunn_bonferroni(y_na, g), dunn_bonferroni(y[-c(2, 9)], g[-c(2, 9)]))
+    expect_named(dunn_bonferroni(y_na, g), c("A_vs_B", "A_vs_C", "B_vs_C"))
+})
+
+test_that("dunnett_t3 matches AdunnettT3Test on random data", {
+    # AdunnettT3Test is the modified copy of PMCMRplus::dunnettT3Test used by
+    # the original statomatic. Its p-values use Monte Carlo integration, so
+    # each comparison runs both versions with the same seed.
+    seeds <- with_seed(7, sample.int(1e6, 120))
+    for (s in seq_along(seeds)) {
+        data <- with_seed(seeds[s], {
+            k <- sample(3:5, 1)
+            sizes <- sample(3:10, k, replace = TRUE)
+            N <- sum(sizes)
+            g <- rep(paste0("g", seq_len(k)), sizes)
+            y <- switch(s %% 4 + 1,
+                stats::rnorm(N, rep(seq_len(k) / 2, sizes)),
+                stats::rnorm(N, 10, rep(seq_len(k), sizes)),          # unequal variances
+                round(stats::rnorm(N, 10, 2)),                         # ties
+                { v <- stats::rnorm(N, 5); v[g %in% c("g1", "g2")] <- 3; v })  # two identical constant groups
+            list(y = y, g = g)
+        })
+        old <- with_seed(s, AdunnettT3Test(data$y, factor(data$g))$p.value)
+        cells <- which(!is.na(old), arr.ind = TRUE)
+        old_p <- stats::setNames(old[cells], paste0(colnames(old)[cells[, "col"]], "_vs_",
+                                                    rownames(old)[cells[, "row"]]))
+        new_p <- with_seed(s, dunnett_t3(data$y, data$g))
+        expect_setequal(names(new_p), names(old_p))
+        expect_equal(new_p, old_p[names(new_p)])
+    }
+})
+
+test_that("dunnett_t3 gives p = 1 for two identical constant groups", {
+    y <- c(rep(3, 5), rep(3, 5), with_seed(3, stats::rnorm(5, 5)))
+    p <- with_seed(1, dunnett_t3(y, rep(c("a", "b", "c"), each = 5)))
+    expect_equal(p[["a_vs_b"]], 1)
+    expect_true(all(p[c("a_vs_c", "b_vs_c")] < 0.05))
+})
+
+test_that("dunnett_t3 drops missing values and keeps every pair", {
+    y <- with_seed(9, stats::rnorm(18))
+    g <- rep(c("A", "B", "C"), each = 6)
+    y_na <- y
+    y_na[c(2, 9)] <- NA
+    expect_equal(with_seed(1, dunnett_t3(y_na, g)), with_seed(1, dunnett_t3(y[-c(2, 9)], g[-c(2, 9)])))
+    expect_named(dunnett_t3(y_na, g), c("A_vs_B", "A_vs_C", "B_vs_C"))
+})
