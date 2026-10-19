@@ -16,7 +16,7 @@ cf <- function(dat, column_index = 1) {
 #' @param dim_max Maximum random dimension of data frame. Defaults to 50. Note: group_max * dim max must be <= 1000
 #' @param param_min Minimum random parameters for normal distribution (i.e., mean and variance). Defaults to 0
 #' @param param_max Maximum random parameters for normal distribution. Defaults to 20
-#' @return A list, element one is the randomly generated data frame, element two is sample_info. Access with double brackets: [[1]], [[2]].
+#' @return A list, element one is the randomly generated data frame, element two is sample_info. Access with double brackets: `[[1]]`, `[[2]]`.
 #' @export 
 
 dummy_data <- function(group_min = 2, group_max = 20, dim_min = 1, dim_max = 50, param_min = 0, param_max = 20) {
@@ -39,7 +39,7 @@ dummy_data <- function(group_min = 2, group_max = 20, dim_min = 1, dim_max = 50,
     x <- data.frame()
     cols <- c()
     for (i in 1:col_num) {
-        n <- rnorm(row_num, m, v)
+        n <- stats::rnorm(row_num, m, v)
         c <- paste0("Y", i)
         cols <- append(cols, c)
         x <- rbind(x, n)
