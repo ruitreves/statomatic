@@ -96,7 +96,8 @@ test_that("an empty set gives a 0-row table with the usual columns", {
 
 test_that("verbose prints progress, verbose = FALSE is silent", {
     msgs <- capture_messages(multigroup_main(x, si, two_way))
-    expect_true(any(grepl("Sorting genes", msgs)))
+    expect_true(any(grepl("Sorting rows", msgs)))
+    expect_true(any(grepl("Analyzing 80 rows in 6 groups", msgs)))
     expect_true(any(grepl("ne: 50  nu: 4  nn: 26", msgs)))
     expect_silent(multigroup_main(x, si, two_way, verbose = FALSE))
 })

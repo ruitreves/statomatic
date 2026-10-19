@@ -41,9 +41,9 @@ twogroup_main <- function(x, sample_info, factors, sample_col = NULL,
     checked <- check_factors(x, select_factors(x, sample_info, factors, sample_col), two_group = TRUE)
     group <- checked$group
     x <- as.data.frame(x)
-    say("Analyzing ", nrow(x), " genes in 2 groups: ", paste(levels(group), collapse = ", "))
+    say("Analyzing ", n_rows(nrow(x)), " in 2 groups: ", paste(levels(group), collapse = ", "))
 
-    say("Sorting genes by normality and equality of variance...")
+    say("Sorting rows by normality and equality of variance...")
     sets <- test_norm(x, checked$factors, shapiro_threshold = shapiro_threshold,
                           levene_threshold = levene_threshold)
     say("  ne: ", nrow(sets$ne), "  nu: ", nrow(sets$nu), "  nn: ", nrow(sets$nn))
@@ -62,7 +62,7 @@ twogroup_main <- function(x, sample_info, factors, sample_col = NULL,
             # no genes: run on one gene to get the columns, then keep 0 rows
             return(run(x[1, , drop = FALSE])[0, , drop = FALSE])
         }
-        say("Running ", label, " on ", nrow(dat), " genes...")
+        say("Running ", label, " on ", n_rows(nrow(dat)), "...")
         run(dat)
     }
     res <- list(

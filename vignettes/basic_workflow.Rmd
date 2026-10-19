@@ -1,8 +1,8 @@
 ---
-title: "basic_workflow"
+title: "Basic workflow"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{basic_workflow}
+  %\VignetteIndexEntry{Basic workflow}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,11 +14,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-This basic workflow vignette is intended to demonstate some basic usage of the statomatic package to analyze count data 
-from an experiment.
+This vignette demonstrates the basic usage of the statomatic package to analyze data from an experiment.
 
-There will be three different analyses included here, meant to demonstrate how statomatic handles different experiment designs. The three 
-designs demonstrated here will be a multi group (> 2) two factor design, a two group one factor design, and a multi group one factor design. 
+It includes three analyses, showing how statomatic handles different experimental designs: a multi-group (> 2) two-factor design, a two-group one-factor design, and a multi-group one-factor design.
 
 First, load the statomatic package.
 
@@ -26,10 +24,21 @@ First, load the statomatic package.
 library(statomatic)
 ```
 
-## Part1: Multi group 2 factor design
+## How statomatic chooses a test
 
-The data analyzed here is from an RNA Sequencing experiement which aimed to identify differentially expressed genes across several experiemental 
-conditions. The details of this experiment won't be discussed here. 
+statomatic tests each row of the data (each gene, taxon, metabolite, ...) separately. For every row it first checks whether the residuals of a linear model are normally distributed (Shapiro-Wilk test) and whether the groups have equal variances (Levene test). This sorts the rows into three sets:
+
+| Set | Meaning | 2 groups | > 2 groups | > 2 groups: pairwise comparisons |
+|---|---|---|---|---|
+| ne | normal, equal variance | t-test | ANOVA | Tukey HSD |
+| nu | normal, unequal variance | Welch test | Welch test | Dunnett T3 |
+| nn | not normal | Wilcoxon test | Kruskal-Wallis test | Dunn test |
+
+Each set is then analyzed with the tests suited to it, and fold changes are calculated between every pair of groups.
+
+## Part 1: Multi-group, two-factor design
+
+The data analyzed here is from an RNA sequencing experiment which aimed to identify differentially expressed genes across several experimental conditions. The details of this experiment won't be discussed here.
 
 Load the data to be analyzed. Here we analyze the normalized counts, as created by DESeq2.
 
@@ -38,176 +47,145 @@ norm_counts <- read.csv("normalized_counts.csv")
 head(norm_counts)
 ```
 
-Notice that the row names of norm_counts are numbers, and that the gene ids are actually inside the data.frame. 
-Statomatic will not be able to handle this textual data, so we need to make sure to set the gene ids as the row names 
-and remove the gene ids column from inside the data.frame. 
+Notice that the row names of norm_counts are numbers, and that the gene ids are actually inside the data.frame. statomatic can only analyze numbers, so the gene ids need to be the row names, and the gene id column needs to be removed.
 
-Statomatic has a built in function for this, cf(). This function will set a specified column of a data.frame to be the new row names,
-and then remove the column from inside the data.frame. The column which should be the row names can be specified by column_index = an integer, but this 
-value defaults to 1 (i.e., the first column). 
+statomatic has a built-in function for this, `cf()`. It sets a specified column of a data.frame as the new row names, and then removes that column from the data.frame. The column can be chosen with `column_index`, which defaults to 1 (the first column).
+
+Using `cf()` with the default `column_index = 1` is the same as reading the file with `read.csv("normalized_counts.csv", row.names = 1)`. Either way works; `cf()` is handy when the data is already loaded.
 
 ```{r column_fix}
 norm_counts <- cf(norm_counts)
 head(norm_counts)
 ```
 
-Now the data is ready to be analyzed. 
+Now the data is ready to be analyzed.
 
-We also must provide statomatic with metadata about our samples. In the case of this experiment, our samples come from different experimental 
-groups. The way to do this is by creating another data.frame which contains our sample names and their experimental conditions. 
-We'll use the column names of norm_counts, since these are the samples, and we'll specify conditions of the experiment in additional columns.
-The experimental conditions here are sex and genotype. 
+We also need to tell statomatic which experimental conditions each sample belongs to. We do this with a data.frame, `sample_info`, with one row per sample: a column with the sample names (the column names of norm_counts), and one column per experimental condition. The experimental conditions here are sex and genotype.
 
 ```{r make sample info}
-sample_info <- data.frame(samples = colnames(norm_counts), sex = c(rep("Male", 10), rep("Female", 10)), 
-                          genotype = c(rep("WT", 5), rep("KO", 5), rep("WT", 5), rep("KO", 5)), 
-                          group = c(rep("M_WT", 5), rep("M_KO", 5), rep("F_WT", 5), rep("F_KO", 5)))
+sample_info <- data.frame(sample = colnames(norm_counts),
+                          sex = c(rep("Male", 10), rep("Female", 10)),
+                          genotype = c(rep("WT", 5), rep("KO", 5), rep("WT", 5), rep("KO", 5)))
 sample_info
 ```
 
-Notice that the final column, group, is a linear combination of the first two columns. This is necessary to statomatic's process. The final column of
-the sample_info should always describe the distribution of the rest of the experimental conditions (if there are any). 
+statomatic matches the rows of `sample_info` to the columns of the data by sample name, so the order of the rows doesn't matter. It finds the column with the sample names automatically (here, `sample`). If your sample names are the row names of `sample_info` instead, that works too.
 
-Now we build the statomatic data set. We'll include the columns, the sample metdata (sample_info), and specify the experimental design.
-The experimental design here is sex + genotype. 
+Now we run the analysis with `multigroup_main()`. We give it the data, `sample_info`, and the names of the columns of `sample_info` to use as the experimental factors.
 
-```{r build sds part1}
-sds <- make_sds(x = norm_counts, colData = sample_info, design = ~ sex + genotype)
-sds
+```{r run multigroup_main}
+set.seed(1)
+res <- multigroup_main(norm_counts, sample_info, factors = c("sex", "genotype"))
 ```
 
-By viewing sds we can see information about our data such as the number of rows, column names, etc. 
+With two factors, statomatic uses a two-way ANOVA for the normal, equal-variance (ne) rows. The pairwise comparisons and fold changes compare every combination of the factors: statomatic combines sex and genotype into four groups (Female_KO, Female_WT, Male_KO and Male_WT).
 
-To analyze the data contained in sds, we use the sds_analyze() function. This functions automatically takes information from sds 
-in order to perform the analysis. This function will use the experimental design we specified when we created sds
+The Dunnett T3 test calculates its p-values with a random (Monte Carlo) method, so its p-values can change very slightly from one run to the next. Setting a seed with `set.seed()` before the analysis makes the results reproducible.
 
-```{r run sds_analyze}
-sds <- sds_analyze(sds)
-sds
-```
-
-Notice that sds appears unchanged. The results of the analysis are stored within sds, and we can access them as follows.
-
-To access all of the p-values from the multi-comparison tests and the fold changes, we can use the get_results() function.
-
-```{r all results}
-res <- get_results(sds)
-head(res)
-```
-
-Notice that in addition to the p-values and fold changes, the mean of each group as well as the test used is at the end of the data.frame. 
-
-If you want to see the anova results, they can be accessed with get_anova().
-
-```{r anova results}
-anova_res <- get_anova(sds)
-head(anova_res)
-```
-
-This data.frame also includes the Tukey multi-comparison results, as well as fold changes.
-
-To access the welch and kruskal-wallis results, use get_welch_test and get_kw. 
-
-You can also access the data.frames ne, nu, and nn by using get_ne, get_nu, and get_nn. 
-
-To see what other results are stored in sds, you can do this:
+The result is a list:
 
 ```{r names}
-names(sds@results)
+names(res)
 ```
 
-You can access any of these results by doing something like sds@results$anova_results.
+- `anova_results`, `welch_results` and `kw_results` hold the results for the ne, nu and nn rows.
+- `foldchanges` holds the fold changes and group means of every row.
+- `ne`, `nu` and `nn` are the rows of the data in each set.
+- `tests` shows, for every row, the Shapiro-Wilk and Levene p-values and the set it was sorted into.
 
-## Part2: Two group, one factor design
+Let's look at the ANOVA results.
 
-First load the data. For this example we'll look at some gene expression data from an RNA-Seq experiment. These counts were normalized by DESeq2. 
-There are two groups in this data set. Group1 is samples 1-4, and group2 is samples 5-8. For the purposes of this example, we'll say that group1 is
-"treated" and group2 is "untreated". 
+```{r anova results}
+head(res$anova_results)
+```
+
+The table starts with the ANOVA p-values for each main effect and their interaction. Then, for each pair of groups, it has the pairwise (here Tukey) p-value, the adjusted p-value and the log2 fold change. It ends with the mean of each group and the name of the pairwise test.
+
+Two kinds of p-value adjustment are involved:
+
+- The pairwise p-values (Tukey, Dunnett T3, Dunn) are already adjusted for comparing several pairs of groups within one row.
+- The `padj` columns adjust for testing many rows, using the Benjamini-Hochberg method. They are calculated separately within each set. They can be turned off with `padj = FALSE`.
+
+The Welch and Kruskal-Wallis results have the same layout, except that they start with a single `pvalue` and `padj`, because those tests compare all the combined groups at once.
+
+```{r welch results}
+head(res$welch_results)
+```
+
+To see how each row was sorted:
+
+```{r tests}
+head(res$tests)
+table(res$tests$set)
+```
+
+All the pairwise results can be combined into one table, because they have the same columns in all three sets:
+
+```{r combine results}
+pairwise <- lapply(res[c("anova_results", "welch_results", "kw_results")], function(tab) {
+    tab[, grep("_vs_|_mean$|^test$", colnames(tab))]
+})
+all_results <- do.call(rbind, unname(pairwise))
+head(all_results)
+```
+
+## Part 2: Two-group, one-factor design
+
+First, load the data. For this example we'll look at gene expression data from an RNA-seq experiment, normalized by DESeq2. There are two groups in this data set: samples 1-4 and samples 5-8. For the purposes of this example, we'll call them "treated" and "untreated".
 
 ```{r read in}
 x <- read.csv("two_group_normalized_counts.csv")
-head(x)
-```
-
-We need to format the data so that the gene ids in the first column are rownames, and not inside the data.frame. We can use the cf() function for this.
-
-```{r cf}
 x <- cf(x)
 head(x)
 ```
 
-Now, we have to make a sample_info object to map our samples to their experimental factors.
+Now we make the `sample_info` to map our samples to their group.
 
 ```{r sample_info}
-sample_info <- data.frame(sample = colnames(x), group = c(rep("treated", 4), rep("untreated", 4)))
+sample_info <- data.frame(sample = colnames(x),
+                          group = c(rep("treated", 4), rep("untreated", 4)))
 sample_info
 ```
 
-Now we build the statomatic data set
+For two groups we use `twogroup_main()`, with the name of the column that holds the groups.
 
-```{r build sds part2}
-sds <- make_sds(x, colData = sample_info, design = ~ group)
-sds
+```{r twogroup_main}
+res <- twogroup_main(x, sample_info, factors = "group")
+names(res)
 ```
 
-And we run sds_analyze. 
+The results are in `ttest_results`, `welch_results` and `wilcox_results`. Each has the p-value, the adjusted p-value, the log2 fold change, the two group means and the name of the test:
 
-```{r analyze}
-sds <- sds_analyze(sds)
+```{r twogroup results}
+head(res$ttest_results)
 ```
 
-And we can extract the results by doing: 
+Because all three tables have the same columns, they can be combined directly:
 
-```{r get results}
-res <- get_results(sds)
-head(res)
+```{r twogroup combine}
+all_results <- rbind(res$ttest_results, res$welch_results, res$wilcox_results)
+head(all_results)
 ```
 
-You can access most results stored in sds with a function that starts with get_ and ends with the name of the result.
-To see a full list of results stored in sds, you can do this:
+## Part 3: Multi-group, one-factor design
 
-```{r @results}
-names(sds@results)
-```
+The data used here is species-level data from a metagenomic analysis. There are 24 samples in three groups, with 8 samples per group. We'll call the groups group1, group2 and group3. This analysis moves a bit faster, as the steps are the same as before.
 
-And any of these can be accessed by sds@results$result_name
-
-Notice that we used the same function (sds_analyze) to analyze both multi-group and two-group
-data. The sds_analyze function uses the design information supplied during the creation of sds to decide whether to apply two-group or multi-group
-tests. 
-
-We're going to use the same sds_analyze function again for the next part of this vignette. 
-
-## Part3: Multi-group one factor design
-
-The data we use here is some species level data from a metagenomic analysis. There are 24 samples, and three experimental factors with 8 samples 
-per group. For our purposes here, we'll call the factors group1, 2, and 3. The pace of this analysis will be a bit faster than the previous one,
-as most steps are very similar. 
-
-```{r}
-#read in data
+```{r species data}
 x <- read.csv("species_abundance.csv")
-#fix rownames
 x <- cf(x)
 head(x)
+sample_info <- data.frame(sample = colnames(x),
+                          group = c(rep("group1", 8), rep("group2", 8), rep("group3", 8)))
 ```
 
-```{r}
-#make sample_info
-sample_info <- data.frame(sample = colnames(x), group = c(rep("group1", 8), rep("group2", 8), rep("group3", 8)))
-sample_info
+```{r species analysis}
+set.seed(1)
+res <- multigroup_main(x, sample_info, factors = "group")
 ```
 
-```{r}
-#make sds
-sds <- make_sds(x, colData = sample_info, design = ~ group)
-sds <- sds_analyze(sds)
-```
+With a single factor, statomatic uses a one-way ANOVA for the ne rows, and the ANOVA results start with a single `pvalue` and `padj`, like the Welch and Kruskal-Wallis results.
 
-Notice here that statomatic tells us that it's using a one way anova to analyze the normal-equal variance portion of the data.
-This is because of our specified design. 
-
-```{r}
-res <- get_results(sds)
-head(res)
+```{r species results}
+head(res$anova_results)
 ```

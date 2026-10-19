@@ -107,3 +107,9 @@ test_that("long lists in messages are shortened", {
     f <- data.frame(g = rep(c("A", "B", "C"), each = 8), row.names = paste0("T", 1:24))
     expect_error(check_factors(x, f), "S1, S2, S3, S4, S5 and 19 more")
 })
+
+test_that("n_rows uses the singular for one row", {
+    expect_identical(n_rows(1), "1 row")
+    expect_identical(n_rows(0), "0 rows")
+    expect_identical(n_rows(80), "80 rows")
+})

@@ -245,3 +245,7 @@ select_factors <- function(x, sample_info, factors, sample_col = NULL) {
     rownames(out) <- ids[keep]
     out
 }
+
+#' "1 row" or "n rows", for progress messages
+#' @noRd
+n_rows <- function(n) paste(n, if (n == 1) "row" else "rows")
