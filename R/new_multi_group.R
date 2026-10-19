@@ -43,10 +43,17 @@ new_run_dunnett <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort
 #' @inheritParams new_run_tukey
 #' @noRd
 new_run_dunn <- function(x, var1, padj = TRUE, include_test_name = TRUE, sort_columns = TRUE) {
+    # Adunn.test sorts groups itself (locale-dependent), so re-orient each
+    # comparison to follow the factor's level order, like Tukey, Dunnett and
+    # new_fold_change. The two-sided p-value is the same in either direction.
+    lv <- levels(factor(var1))
     per_gene <- lapply(seq_len(nrow(x)), function(i) {
         dunn <- Adunn.test(unlist(x[i, ]), g = var1, method = "bonferroni", table = FALSE, kw = FALSE, altp = TRUE)
-        pvalues <- stats::setNames(dunn$altP.adjusted, sub(" - ", "_vs_", dunn$comparisons))
-        pvalues <- pvalues[order(names(pvalues), method = "radix")]
+        pair <- do.call(rbind, strsplit(dunn$comparisons, " - ", fixed = TRUE))
+        swap <- match(pair[, 1], lv) > match(pair[, 2], lv)
+        pair[swap, ] <- pair[swap, 2:1]
+        pvalues <- stats::setNames(dunn$altP.adjusted, paste0(pair[, 1], "_vs_", pair[, 2]))
+        pvalues <- pvalues[order(match(pair[, 1], lv), match(pair[, 2], lv))]   # same pair order as the other functions
         return(pvalues)
     })
     res <- do.call(rbind, per_gene)

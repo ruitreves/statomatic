@@ -62,6 +62,24 @@ test_that("new_run_dunn column order does not depend on locale", {
     expect_identical(a, b)
 })
 
+test_that("post-hoc tests and fold changes name comparisons identically in any locale", {
+    # Mixed-case names sort differently in C and en_US locales. With levels set
+    # once, every function must use the same pair names, direction and order.
+    raw <- c("a", "B", "c", "D", "e", "F")[match(d$groups, sort(unique(d$groups)))]
+    g <- factor(raw, levels = sort(unique(raw), method = "radix"))
+    cmp <- function(res, prefix) sub(paste0("^", prefix), "", grep(paste0("^", prefix), colnames(res), value = TRUE))
+
+    old_locale <- Sys.getlocale("LC_COLLATE")
+    on.exit(Sys.setlocale("LC_COLLATE", old_locale))
+    for (loc in c("C", "en_US.UTF-8")) {
+        if (suppressWarnings(Sys.setlocale("LC_COLLATE", loc)) == "") next
+        fc <- cmp(new_fold_change(d$x, g), "log2FoldChange_")
+        expect_identical(cmp(new_run_tukey(d$x, g, padj = FALSE), "pvalue_"), fc)
+        expect_identical(cmp(new_run_dunnett(d$x, g, padj = FALSE), "pvalue_"), fc)
+        expect_identical(cmp(new_run_dunn(d$x, g, padj = FALSE), "pvalue_"), fc)
+    }
+})
+
 test_that("padj columns are BH-adjusted pvalue columns", {
     res <- new_run_tukey(d$x, d$groups)
     p <- res[, grepl("^pvalue_", colnames(res))]
