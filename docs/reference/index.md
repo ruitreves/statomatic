@@ -2,6 +2,8 @@
 
 ## All functions
 
+- [`add_fold_changes()`](https://ruitreves.github.io/statomatic/reference/add_fold_changes.md)
+  : Attach fold changes to post-hoc p-values, matched by comparison name
 - [`cf()`](https://ruitreves.github.io/statomatic/reference/cf.md) : Set
   rownames to a specified column and remove that column from the
   dataframe

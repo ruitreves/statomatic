@@ -1,8 +1,8 @@
-# statomatic rebuild — handoff
+# statomatic — handoff
 
-Last updated 2026-10-19. Branch `rebuild`, last commit `84bbee6`. **Integration is done**: statomatic 1.0.0 passes `R CMD check` with 0 errors, 0 warnings, 0 notes. Next: documentation, then merge `rebuild` into `main`.
+Last updated 2026-10-19. **statomatic 1.0.0 is released**: the rebuild was merged into `main` (PR #1) and tagged `v1.0.0`. Work now happens on `main` (last commit `a5dfd57`). `R CMD check` at release: 0 errors, 0 warnings, 0 notes.
 
-**To resume with Claude Code:** open this repo, run `git pull` on `rebuild`, and tell Claude:
+**To resume with Claude Code:** open this repo, run `git pull` on `main`, and tell Claude:
 > Read dev/HANDOFF.md and pick up where it leaves off. Save the "Working rules" and "Direction" sections to your memory.
 
 ---
@@ -17,7 +17,7 @@ Last updated 2026-10-19. Branch `rebuild`, last commit `84bbee6`. **Integration 
 
 ## Direction (decided 2026-10-15)
 
-**A faithful rebuild of statomatic** that keeps its pre-test sorting approach, with updated documentation of the approach and its limitations. statomatic is my first first-author publication (Treves, Gripshover & Hardesty 2025, *Stats* 8(1), doi:10.3390/stats8010018); don't re-argue replacing it with DESeq2/edgeR/limma. "Faithful" still allows improvements: Type II ANOVA, name-based sample matching, the `tests` table, `log_input`, design checks.
+**A faithful rebuild of statomatic** that keeps its pre-test sorting approach, with updated documentation of the approach and its limitations. Statomatic is my first first-author publication (Treves, Gripshover & Hardesty 2025, *Stats* 8(1), doi:10.3390/stats8010018); don't re-argue replacing it with DESeq2/edgeR/limma. "Faithful" still allows improvements: Type II ANOVA, name-based sample matching, the `tests` table, `log_input`, design checks.
 
 ## What statomatic does
 
@@ -42,9 +42,10 @@ In the multigroup workflow, each omnibus result is combined with its post-hoc re
 | `run_tukey`, `run_dunnett`, `run_dunn` | `R/multi_group_tests.R` | Dunn needs >2 groups |
 | `run_anova(x, factors)`, `run_kruskal` | `R/anovas.R` | ANOVA is **always Type II** via `car::Anova` |
 | `fold_change(x, var1, log_input)` | `R/fold_change.R` | log2 of ratio of means; `log_input = TRUE` → difference of means |
+| `add_fold_changes(pvals, fcs)` | `R/utils.R` | attaches fold changes and group means to post-hoc results by comparison name; **exported after 1.0.0**, for my own use (not in vignettes or NEWS) |
 | `cf`, `dummy_data` | `R/odds.R` | kept from the original |
 
-Internal helpers: `make_res`, `select_factors`, `check_factors`, `add_fold_changes`, `n_rows` (`R/utils.R`); `dunn_bonferroni`, `dunnett_t3` (`R/multi_group_tests.R`) — statomatic's own implementations, identical to the modified copies of dunn.test 1.3.6 and PMCMRplus::dunnettT3Test that 1.0.0 removed.
+Internal helpers: `make_res`, `select_factors`, `check_factors`, `n_rows` (`R/utils.R`); `dunn_bonferroni`, `dunnett_t3` (`R/multi_group_tests.R`) — statomatic's own implementations, identical to the modified copies of dunn.test 1.3.6 and PMCMRplus::dunnettT3Test that 1.0.0 removed.
 
 Imports: `car`, `mvtnorm`, `onewaytests`, `stats`, `utils`. Maintainer: rui.treves@louisville.edu (no ORCID listed). `NEWS.md` has the full 1.0.0 entry.
 
@@ -76,22 +77,16 @@ Dev folder (excluded from the build): `load_data.R`, `new_stuff.R` (scratch; sti
 
 ## Next steps
 
-1. **Documentation**:
-   - Rewrite `README.md` around the main functions (it still shows the S4 interface; it uses the top-level `normalized_counts.csv`, excluded from the build).
-   - An **"Approach and limitations"** section (README and/or its own vignette): the pre-test reasoning; low power of Shapiro/Levene at 4–6 samples per group (most rows sort to ne); unequal-variance rows often sort to nn (Shapiro on pooled residuals); misrouted heteroscedastic rows can get inflated false positives (ANOVA up to ~17% in our simulations); interaction p-values only for ne rows; post-hoc p-values are within-row corrected and padj adds BH within each set; Wilcoxon results with ties depend on R version; Dunnett T3 needs a seed for reproducibility; for RNA-seq interaction analysis, DESeq2/edgeR/limma are the standard tools.
-   - A vignette built from the simulations ("How well does statomatic sort genes?"): sorting accuracy and false-positive rates by group size.
-   - Rebuild the pkgdown site (`docs/`, `_pkgdown.yml`): it still documents the old functions.
-   - Optional: `@examples` in the help pages.
-2. **Merge** `rebuild` into `main` with a pull request; tag `v1.0.0`.
+1. ~~Finish exporting `add_fold_changes`~~ **Done** (2026-10-19): exported, help page with an example, stops when rows of `pvals` are missing from `fcs`, 3 tests in `test-fold_change.R`, reference page on the site. It's for my own use, so it isn't in the vignettes or NEWS and the version stays 1.0.0.
+2. Optional: `@examples` in the help pages.
 3. Open questions (decide or document): BH pooled vs per set; a `combine_results()` helper (deferred); optional `scale_residuals` (helps at ≥6 per group, not at 4–5); optional "always Welch for normal rows"; optional exact (deterministic) Dunnett T3 p-values.
 
-Done vignettes: `basic_workflow.Rmd` ("Basic workflow") and `additional_workflows.Rmd` ("Additional usage of statomatic"), both rewritten for 1.0.0.
+Documentation done for 1.0.0: README, NEWS.md, vignettes `basic_workflow.Rmd` ("Basic workflow"), `additional_workflows.Rmd` ("Additional usage of statomatic", title stays lowercase) and `approach_and_limitations.Rmd` ("Approach and limitations"; simulations from `inst/simulations/sorting_simulations.R`, results in `vignettes/simulation_results.rds`), and the pkgdown site in `docs/` (served by GitHub Pages at https://ruitreves.github.io/statomatic/). In docs, "Statomatic" is capitalized at the start of a sentence.
 
 ## Setting up on another computer
 
 ```
 git clone https://github.com/ruitreves/statomatic.git
 cd statomatic
-git switch rebuild
 ```
 In R: `install.packages(c("devtools", "testthat", "car", "mvtnorm", "onewaytests", "rmarkdown", "knitr"))`, then `devtools::load_all()` and `devtools::test()`.

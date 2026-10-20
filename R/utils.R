@@ -148,19 +148,35 @@ check_factors <- function(x, factors, two_group = FALSE) {
 
 #' Attach fold changes to post-hoc p-values, matched by comparison name
 #'
-#' For each comparison in `pvals`, orders the columns as pvalue, padj (if
-#' present), log2FoldChange, then appends the group means and any other
-#' columns of `pvals` (e.g. test). Genes are matched by row name.
+#' Combines the results of a pairwise test (run_tukey, run_dunnett, run_dunn)
+#' with the output of fold_change, as multigroup_main does. For each comparison
+#' in `pvals`, the columns are ordered pvalue, padj (if present),
+#' log2FoldChange; then come the group means and any other columns of `pvals`
+#' (e.g. test). Rows are matched by row name, and comparisons by name, so the
+#' order of rows and columns in the two inputs doesn't matter.
 #'
-#' @param pvals a data.frame of post-hoc results with `pvalue_<A>_vs_<B>` columns
-#' @param fcs a data.frame from fold_change, covering at least the genes in pvals
-#' @return a data.frame
+#' @param pvals a data.frame of pairwise results with `pvalue_<A>_vs_<B>` columns
+#' @param fcs a data.frame from fold_change, with a row for every row of pvals
+#'   (extra rows are ignored)
+#' @return a data.frame with the rows of pvals in their original order
+#' @examples
+#' x <- matrix(c(5, 6, 7, 10, 11, 12, 20, 21, 22,
+#'               6, 6, 8, 9, 11, 12, 19, 22, 24), nrow = 2, byrow = TRUE,
+#'             dimnames = list(c("gene1", "gene2"), paste0("s", 1:9)))
+#' group <- rep(c("A", "B", "C"), each = 3)
+#' add_fold_changes(run_tukey(x, group), fold_change(x, group))
 #' @export
 add_fold_changes <- function(pvals, fcs) {
     cmp <- sub("^pvalue_", "", grep("^pvalue_", colnames(pvals), value = TRUE))
     fc_cols <- paste0("log2FoldChange_", cmp)
     missing <- setdiff(fc_cols, colnames(fcs))
     if (length(missing)) stop("No fold changes for: ", paste(missing, collapse = ", "), call. = FALSE)
+    missing_rows <- setdiff(rownames(pvals), rownames(fcs))
+    if (length(missing_rows)) {
+        more <- if (length(missing_rows) > 5) paste0(" and ", length(missing_rows) - 5, " more") else ""
+        stop("No fold changes for these rows of `pvals`: ",
+             paste(utils::head(missing_rows, 5), collapse = ", "), more, call. = FALSE)
+    }
     fcs <- fcs[rownames(pvals), , drop = FALSE]
     per_cmp <- unlist(lapply(cmp, function(k) {
         c(paste0("pvalue_", k),

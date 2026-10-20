@@ -62,3 +62,32 @@ test_that("comparison names use radix order, independent of locale", {
     expect_identical(colnames(fold_change(x, tricky))[1:3],
                      c("log2FoldChange_A_vs_AB", "log2FoldChange_A_vs_B", "log2FoldChange_AB_vs_B"))
 })
+
+test_that("add_fold_changes orders columns pvalue, padj, fold change per comparison", {
+    res <- add_fold_changes(run_tukey(x, group), fold_change(x, group))
+    cmp <- c("A_vs_B", "A_vs_C", "B_vs_C")
+    expect_named(res, c(as.vector(rbind(paste0("pvalue_", cmp), paste0("padj_", cmp),
+                                        paste0("log2FoldChange_", cmp))),
+                        "A_mean", "B_mean", "C_mean", "test"))
+    expect_identical(rownames(res), rownames(x))
+    no_padj <- add_fold_changes(run_tukey(x, group, padj = FALSE), fold_change(x, group))
+    expect_false(any(grepl("^padj_", names(no_padj))))
+})
+
+test_that("add_fold_changes matches rows and comparisons by name", {
+    fc <- fold_change(x, group)
+    tukey <- run_tukey(x, group)
+    res <- add_fold_changes(tukey, fc)
+    expect_equal(res$log2FoldChange_A_vs_C, fc$log2FoldChange_A_vs_C)
+    # rows of fcs in another order, plus a row that isn't in pvals
+    shuffled <- rbind(fc[rev(rownames(fc)), ], extra = fc[1, ])
+    expect_identical(add_fold_changes(tukey, shuffled), res)
+})
+
+test_that("add_fold_changes stops when fold changes are missing", {
+    fc <- fold_change(x, group)
+    tukey <- run_tukey(x, group)
+    expect_error(add_fold_changes(tukey, fc[-(1:2), ]), "No fold changes for these rows of `pvals`: gene1, gene2")
+    expect_error(add_fold_changes(tukey, fc[, names(fc) != "log2FoldChange_A_vs_B"]),
+                 "No fold changes for: log2FoldChange_A_vs_B")
+})
